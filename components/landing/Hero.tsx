@@ -56,14 +56,11 @@ export default function Hero({ onHome }: HeroProps) {
         className="group relative isolate min-h-[430px] cursor-pointer overflow-hidden rounded-[32px] border border-white/20 shadow-[0_25px_80px_-20px_rgba(244,63,94,0.35)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_35px_100px_-20px_rgba(244,63,94,0.45)]"
       >
         {/* Background Image */}
-        <Image
-          src="/banner.jpeg"
-          alt="Duo Corner couple collection banner"
-          fill
-          priority
-          sizes="(max-width: 768px) 100vw, 768px"
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-        />
+<img 
+  src="/banner.jpg" 
+  alt="Duo Corner couple collection banner" 
+  className="w-full h-[430px] object-cover transition-transform duration-300"
+/>
 
         {/* Premium Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/75" />
