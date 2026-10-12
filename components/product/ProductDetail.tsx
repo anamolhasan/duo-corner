@@ -1,7 +1,5 @@
 'use client';
 import { useState } from 'react';
-import Image from 'next/image';
-import CheckoutForm from './CheckoutForm';
 import type { Product } from '@/lib/data';
 
 type ProductDetailProps = {
@@ -10,7 +8,48 @@ type ProductDetailProps = {
 };
 
 export default function ProductDetail({ product, onBack }: ProductDetailProps) {
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const p = product as any;
+  
+  const productName = p.name || p.productName || p['Product Name'] || "Product";
+  const productPrice = Number(p.price || p.Price || p.B || 799);
+  const productCategory = p.category || p.Category || p.C || "Couple Item";
+  const productDescription = p.description || p.Description || p.E || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
+  
+  const productAttributes = p.attributes || [
+    { label: "Product Type", value: "Pearl Gift Box / Pearl Necklace" },
+    { label: "Design", value: "Heart-Shaped Pendant" }
+  ];
+
+  // সরাসরি ইমেজ অ্যারে বা কলাম থেকে ছবিগুলো রিড করা
+  let imageList: string[] = [];
+  
+  if (Array.isArray(p.images) && p.images.length > 0) {
+    imageList = p.images.map((img: string) => (img.startsWith('/') ? img : '/' + img));
+  } else {
+    imageList = ["/parl.jpg", "/parl1.jpg", "/parl2.jpg", "/parl3.jpg"];
+  }
+
+  const productVideo = p.videoUrl || p.video || p.Video || "/video.mp4";
+
+  const [selectedImage, setSelectedImage] = useState(imageList[0] || "/parl.jpg");
+  const [quantity, setQuantity] = useState(1);
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [district, setDistrict] = useState('');
+  const [thana, setThana] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cod'); 
+  const [coupon, setCoupon] = useState('');
+  const [specialNote, setSpecialNote] = useState('');
+  const [agreed, setAgreed] = useState(true);
+  
+  const [loading, setLoading] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+
+  const deliveryCharge = district === 'Dhaka' ? 100 : 130; 
+  const subtotal = productPrice * quantity;
+  const total = subtotal + deliveryCharge;
 
   const scrollToCheckout = () => {
     const formElement = document.getElementById('one-page-checkout');
@@ -19,99 +58,390 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     }
   };
 
+  const handleOrderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName || !phone || !address) {
+      alert("দয়া করে নাম, ফোন নম্বর এবং ঠিকানা পূরণ করুন!");
+      return;
+    }
+    if (!agreed) {
+      alert("দয়া করে শর্তাবলীতে সম্মতি দিন!");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/save-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: fullName,
+          phone: phone,
+          address: `${address}, থানা: ${thana || 'N/A'}, জেলা: ${district || 'N/A'}`,
+          note: `${productName} (Qty: ${quantity}), Note: ${specialNote}, Payment: ${paymentMethod}, Delivery: ${deliveryCharge} BDT`,
+          amount: total
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOrderSuccess(true);
+      } else {
+        alert("অর্ডার করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      }
+    } catch (err) {
+      alert("সার্ভার এরর!");
+    }
+    setLoading(false);
+  };
+
+  if (orderSuccess) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl p-8 shadow-xl border border-orange-100 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+            🎉
+          </div>
+          <h2 className="text-2xl font-black text-gray-900 mb-2">অর্ডার সফলভাবে সম্পন্ন হয়েছে!</h2>
+          <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+            আপনার অর্ডারটি কনফার্ম করতে খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে যোগাযোগ করবেন।
+          </p>
+          <button 
+            onClick={onBack}
+            className="w-full bg-[#f8931f] hover:bg-[#e08219] text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all cursor-pointer"
+          >
+            আরও কেনাকাটা করুন
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <section className="px-4 mt-5 mb-14 animate-fadeIn">
-      <button
+    <div className="max-w-2xl mx-auto px-4 py-6 font-sans text-gray-900">
+      <button 
         onClick={onBack}
-        className="mb-4 cursor-pointer rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 shadow-sm transition hover:bg-gray-50 flex items-center gap-2"
+        className="mb-4 inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2 rounded-xl shadow-sm border border-gray-200 text-xs transition cursor-pointer"
       >
-        ← Back to Home
+        <span>←</span> হোমপেজে ফিরে যান
       </button>
 
-      <div className="space-y-6 rounded-3xl border border-rose-100/80 bg-white p-4 shadow-card md:p-8">
-        <div>
-          {/* ছবি ও গ্যালারি */}
-          <div className="relative mb-3 h-72 overflow-hidden rounded-2xl border border-rose-100/60 bg-rose-50/40 shadow-inner md:h-80">
-            <Image
-              src={product.images[activeImageIndex]}
-              alt={product.name}
-              fill
-              sizes="(max-width: 768px) 100vw, 768px"
-              className="object-cover transition-all duration-300"
-            />
-          </div>
-
-          {product.images.length > 1 && (
-            <div className="mb-4 flex justify-center gap-2">
-              {product.images.map((img: string, idx: number) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setActiveImageIndex(idx)}
-                  aria-label={`View image ${idx + 1}`}
-                  className={`relative h-14 w-14 cursor-pointer overflow-hidden rounded-xl border-2 transition ${
-                    activeImageIndex === idx
-                      ? 'border-rose-600 scale-105 shadow-md'
-                      : 'border-gray-200 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <Image src={img} alt="" width={56} height={56} className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* অর্ডার শর্টকাট বাটন */}
-          <div className="mb-6">
-            <button
-              onClick={scrollToCheckout}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 py-4 text-sm font-black text-white shadow-soft transition transform hover:from-rose-700 hover:to-pink-700 active:scale-95"
-            >
-              🛒 অর্ডার করতে এখানে ক্লিক করুন (Order Now) 👇
-            </button>
-          </div>
-
-          {/* ভিডিও প্রিভিউ */}
-          {product.videoUrl && (
-            <div className="mb-5 overflow-hidden rounded-2xl border border-rose-100 bg-black shadow-soft">
-              <div className="flex items-center gap-1.5 bg-gradient-to-r from-rose-600 to-pink-600 px-3 py-1.5 text-[11px] font-bold text-white">
-                <span>▶️</span> Product Live Video Preview
-              </div>
-              <video
-                controls
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                className="h-64 w-full object-cover"
-              >
-                <source src={product.videoUrl} type="video/mp4" />
-                আপনার ব্রাউজার ভিডিও ট্যাগ সাপোর্ট করছে না।
-              </video>
-            </div>
-          )}
-
-          {/* প্রডাক্টের ডিটেইলস ও স্পেসিফিকেশন টেবিল */}
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-soft">
-            <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3 py-2.5 text-[11px] font-black uppercase tracking-wider text-gray-800">
-              <span>⚡ Product Specifications</span>
-              <span className="font-semibold text-rose-600">100% Original</span>
-            </div>
-            <div className="divide-y divide-gray-100 text-xs">
-              {product.attributes.map((attr, idx) => (
-                <div key={idx} className="grid grid-cols-2 px-3 py-2.5">
-                  <span className="font-bold text-gray-500">{attr.label}</span>
-                  <span className="font-medium text-gray-800">{attr.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Product Image Gallery */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6">
+        <div className="w-full h-72 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 mb-3">
+          <img 
+            src={selectedImage} 
+            alt={productName} 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/parl.jpg";
+            }}
+          />
         </div>
 
-        {/* অর্ডার কনফার্মেশন ফর্ম */}
-        <CheckoutForm product={product} onBackHome={onBack} />
+        {/* Thumbnails */}
+        {imageList.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {imageList.map((img: string, idx: number) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setSelectedImage(img)}
+                className={`w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition cursor-pointer ${selectedImage === img ? 'border-[#f8931f] scale-105 shadow-md' : 'border-gray-200 opacity-70'}`}
+              >
+                <img src={img} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-4">
+          <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md">
+            {productCategory}
+          </span>
+          <h1 className="text-lg font-bold text-gray-900 mt-2">
+            {productName}
+          </h1>
+          <p className="text-xl font-black text-orange-600 mt-1">৳{productPrice}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mt-5">
+          <button 
+            onClick={scrollToCheckout}
+            className="bg-gray-900 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-xl shadow-sm text-xs transition cursor-pointer flex items-center justify-center gap-2"
+          >
+            🛒 Add to Cart
+          </button>
+          <button 
+            onClick={scrollToCheckout}
+            className="bg-[#f8931f] hover:bg-[#e08219] text-white font-bold py-3 px-4 rounded-xl shadow-sm text-xs transition cursor-pointer flex items-center justify-center gap-2"
+          >
+            ⚡ Order Now
+          </button>
+        </div>
       </div>
-    </section>
+
+      {/* Product Specifications & Details Box */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 mb-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+          <h3 className="text-xs font-black text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-orange-500">⚡</span> PRODUCT SPECIFICATIONS
+          </h3>
+          <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded">100% ORIGINAL</span>
+        </div>
+
+        <div className="divide-y divide-gray-50 text-xs">
+          {productAttributes.map((attr: { label: string; value: string }, idx: number) => (
+            <div key={idx} className="py-2.5 grid grid-cols-3 gap-4 items-center">
+              <span className="font-medium text-gray-500">{attr.label}</span>
+              <span className="col-span-2 font-semibold text-gray-800">{attr.value}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-2">
+          <h4 className="text-xs font-bold text-gray-800 mb-1">{productName}</h4>
+          <p className="text-[11px] text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+            {productDescription}
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Product Video Review (ভিডিও রিভিউ)
+          </h3>
+          <div className="rounded-xl overflow-hidden bg-black border border-gray-200 aspect-video flex items-center justify-center">
+            <video 
+              src={productVideo} 
+              controls 
+              autoPlay 
+              muted 
+              loop
+              className="w-full h-full object-cover"
+            >
+              আপনার ব্রাউজার ভিডিও ট্যাগ সাপোর্ট করে না।
+            </video>
+          </div>
+        </div>
+      </div>
+
+      {/* Checkout Form */}
+      <div id="one-page-checkout" className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-200 scroll-mt-6">
+        <form onSubmit={handleOrderSubmit} className="space-y-6">
+
+          <div>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Order review
+            </h3>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <img src={selectedImage} alt="" className="w-12 h-12 rounded-lg object-cover border" />
+                <div>
+                  <h4 className="text-xs font-bold text-gray-800 line-clamp-1">{productName}</h4>
+                  <p className="text-xs font-black text-gray-900 mt-0.5">৳{productPrice * quantity}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden shadow-sm">
+                <button 
+                  type="button" 
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                  className="px-2.5 py-1 text-gray-600 hover:bg-gray-100 font-bold text-xs"
+                >-</button>
+                <span className="px-3 py-1 text-xs font-bold text-gray-900">{quantity}</span>
+                <button 
+                  type="button" 
+                  onClick={() => setQuantity(q => q + 1)}
+                  className="px-2.5 py-1 text-gray-600 hover:bg-gray-100 font-bold text-xs"
+                >+</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Shipping Address
+            </h3>
+            
+            <div className="space-y-3">
+              <input 
+                type="text" 
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Your Full Name *" 
+                required
+                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
+              />
+
+              <div className="flex items-center border border-gray-300 rounded-xl overflow-hidden bg-white">
+                <div className="bg-gray-100 px-3 py-2.5 text-xs font-bold text-gray-600 border-r border-gray-300">
+                  88
+                </div>
+                <input 
+                  type="text" 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="017********" 
+                  required
+                  className="w-full px-3.5 py-2.5 text-xs focus:outline-none" 
+                />
+              </div>
+
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@gmail.com (Optional)" 
+                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
+              />
+
+              <input 
+                type="text" 
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="ex: House no. / building / street / area" 
+                required
+                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
+              />
+
+              <div className="grid grid-cols-2 gap-2">
+                <select 
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f]"
+                >
+                  <option value="">Select District</option>
+                  <option value="Dhaka">Dhaka</option>
+                  <option value="Habiganj">Habiganj</option>
+                  <option value="Sylhet">Sylhet</option>
+                  <option value="Chittagong">Chittagong</option>
+                  <option value="Barishal">Barishal</option>
+                  <option value="Rajshahi">Rajshahi</option>
+                  <option value="Khulna">Khulna</option>
+                </select>
+
+                <select 
+                  value={thana}
+                  onChange={(e) => setThana(e.target.value)}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f]"
+                >
+                  <option value="">Select Thana (Optional)</option>
+                  <option value="Habiganj Sadar">Habiganj Sadar</option>
+                  <option value="Chunarughat">Chunarughat</option>
+                  <option value="Bahubal">Bahubal</option>
+                  <option value="Nabiganj">Nabiganj</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Payment method
+            </h3>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div 
+                onClick={() => setPaymentMethod('cod')}
+                className={`border rounded-xl p-3 flex items-center justify-between cursor-pointer transition ${paymentMethod === 'cod' ? 'border-[#f8931f] bg-orange-50/30 ring-1 ring-[#f8931f]' : 'border-gray-200 bg-white'}`}
+              >
+                <span className="text-xs font-bold text-gray-800">💵 Cash On Delivery</span>
+                <input type="radio" checked={paymentMethod === 'cod'} readOnly className="accent-[#f8931f]" />
+              </div>
+
+              <div 
+                onClick={() => setPaymentMethod('online')}
+                className={`border rounded-xl p-3 flex items-center justify-between cursor-pointer transition ${paymentMethod === 'online' ? 'border-[#f8931f] bg-orange-50/30 ring-1 ring-[#f8931f]' : 'border-gray-200 bg-white'}`}
+              >
+                <span className="text-xs font-bold text-gray-800">💳 Online Payment</span>
+                <input type="radio" checked={paymentMethod === 'online'} readOnly className="accent-[#f8931f]" />
+              </div>
+            </div>
+
+            <div 
+              onClick={() => setPaymentMethod('bkash')}
+              className={`mt-2 border rounded-xl p-3 flex items-center justify-between cursor-pointer transition w-full md:w-1/2 ${paymentMethod === 'bkash' ? 'border-[#f8931f] bg-orange-50/30 ring-1 ring-[#f8931f]' : 'border-gray-200 bg-white'}`}
+            >
+              <span className="text-xs font-bold text-pink-600 flex items-center gap-1.5">📱 Bkash / Nagad</span>
+              <input type="radio" checked={paymentMethod === 'bkash'} readOnly className="accent-[#f8931f]" />
+            </div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+            <span className="text-xs font-bold text-gray-700 block mb-2">Have any coupon or gift voucher?</span>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                value={coupon}
+                onChange={(e) => setCoupon(e.target.value)}
+                placeholder="Enter Coupon" 
+                className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none"
+              />
+              <button type="button" className="bg-[#f8931f] text-white px-4 py-2 rounded-lg text-xs font-bold">Apply coupon</button>
+            </div>
+          </div>
+
+          <div className="space-y-2 border-t border-b border-gray-200 py-3 text-xs">
+            <div className="flex justify-between text-gray-600">
+              <span>Sub total</span>
+              <span className="font-bold text-gray-900">{subtotal}.00 BDT</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Delivery cost</span>
+              <span className="font-bold text-gray-900">{deliveryCharge}.00 BDT</span>
+            </div>
+            <div className="flex justify-between text-sm font-black text-gray-900 pt-1">
+              <span>Total</span>
+              <span className="text-[#f8931f]">{total}.00 BDT</span>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Special notes (Optional)</h3>
+            <textarea 
+              rows={2}
+              value={specialNote}
+              onChange={(e) => setSpecialNote(e.target.value)}
+              placeholder="কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."
+              className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs focus:outline-none focus:border-[#f8931f] resize-none"
+            ></textarea>
+          </div>
+
+          {/* মহৎ উদ্যোগের নোটিশ */}
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-gray-800 space-y-2 leading-relaxed shadow-sm">
+            <p className="font-semibold text-gray-900">
+              প্রিয় গ্রাহক, আপনি জেনেছেন আমাদের লভ্যাংশের টাকা দিয়ে অসহায় দুঃস্থ মানুষদের খাবারের ব্যবস্থা করা হবে , আপনিও আমাদের সেই মহৎ কাজের সঙ্গী হতে চলেছেন🥀
+            </p>
+            <p className="text-red-600 font-bold">
+              ❌ বিনা প্রয়োজনে ফেইক অর্ডার করে এক টাকারও ক্ষতি করলে সেটা লভ্যাংশ থেকে কমে যাবে এবং সেই দায় আপনার উপরে থাকবে,
+            </p>
+            <p className="text-emerald-700 font-bold">
+              ✅ আপনার বিশ্বস্ততার জন্য সম্পূর্ণ ক্যাশ অন ডেলিভারিতে প্রোডাক্টটি পাঠানো হবে! ধন্যবাদ,!
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input 
+              type="checkbox" 
+              id="terms" 
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="w-4 h-4 accent-[#f8931f] rounded cursor-pointer" 
+            />
+            <label htmlFor="terms" className="text-[11px] text-gray-600 cursor-pointer">
+              I have read and agree to the <span className="text-orange-600 underline">Terms and Conditions</span>, <span className="text-orange-600 underline">Privacy Policy</span> & <span className="text-orange-600 underline">Refund and Return Policy</span>.
+            </label>
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-[#f8931f] hover:bg-[#e08219] text-white font-black py-4 rounded-xl shadow-lg transition duration-200 text-sm tracking-wider uppercase disabled:opacity-50 cursor-pointer"
+          >
+            {loading ? 'PROCESSING ORDER...' : 'PLACE ORDER'}
+          </button>
+
+        </form>
+      </div>
+    </div>
   );
 }

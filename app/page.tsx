@@ -30,12 +30,14 @@ export default function Home() {
   };
 
   return (
-    <main className="relative mx-auto min-h-screen max-w-md bg-gradient-to-b from-rose-50/50 via-white to-white pb-16 font-sans text-gray-900 md:max-w-4xl">
+    <main className="relative mx-auto min-h-screen max-w-md bg-gradient-to-b from-rose-50/50 via-white to-white pb-16 font-sans text-gray-900 md:max-w-4xl shadow-xl">
       <PromoBar />
 
       <Hero onHome={() => setViewMode('home')} />
 
-      {viewMode === 'home' && <ProductGrid onDetails={handleOpenDetail} onOrder={handleDirectOrder} />}
+      {viewMode === 'home' && (
+        <ProductGrid onDetails={handleOpenDetail} onOrder={handleDirectOrder} />
+      )}
 
       {viewMode === 'detail' && activeProduct && (
         <ProductDetail product={activeProduct} onBack={() => setViewMode('home')} />

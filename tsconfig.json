@@ -1,11 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-<<<<<<< HEAD
-    "target": "es5",
-=======
-    "target": "ES2022",
->>>>>>> e2a6589e077e97685167343aeab53bc9a4d14823
+    "target": "es2022",
     "lib": [
       "dom",
       "dom.iterable",
@@ -20,10 +16,6 @@
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-<<<<<<< HEAD
-=======
-    "moduleDetection": "force",
->>>>>>> e2a6589e077e97685167343aeab53bc9a4d14823
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
@@ -42,10 +34,6 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-<<<<<<< HEAD
-=======
-    "content/**/*.mdx",
->>>>>>> e2a6589e077e97685167343aeab53bc9a4d14823
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [

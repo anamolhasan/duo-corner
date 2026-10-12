@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Hind_Siliguri } from "next/font/google";
 import "./globals.css";
+// Clerk-কে প্রজেক্টে নিয়ে আসলাম
+import { ClerkProvider } from '@clerk/nextjs'; 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,16 +23,24 @@ const hindSiliguri = Hind_Siliguri({
 export const metadata: Metadata = {
   title: "Duo Corner | Exclusive Couple Gifts | Cash on Delivery",
   description:
-    "Premium couple gift boxes, matching bracelets and exclusive couple collections. Free gift box with cash on delivery all over Bangladesh.",
+    "Premium couple gift boxes, matching bracelets and exclusive couple collections.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${hindSiliguri.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
-    </html>
+    // পুরো ওয়েবসাইটকে ClerkProvider দিয়ে মুড়িয়ে দিলাম
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} ${hindSiliguri.variable} antialiased`}
+        >
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

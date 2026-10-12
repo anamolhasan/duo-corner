@@ -1,5 +1,6 @@
-import Image from "next/image";
-import { products, taka, type Product } from "@/lib/data";
+'use client';
+import { useState, useEffect } from 'react';
+import type { Product } from '@/lib/data';
 
 type ProductGridProps = {
   onDetails: (product: Product) => void;
@@ -7,75 +8,86 @@ type ProductGridProps = {
 };
 
 export default function ProductGrid({ onDetails, onOrder }: ProductGridProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const formattedProducts = data.map((item: any, index: number) => ({
+            id: String(index + 1),
+            // গুগল শিটের হেডারগুলোর সাথে নাম মিলিয়ে নেওয়া হলো
+            name: item.productName || item['Product Name'] || "Product",
+            price: Number(item.price || item.Price || 0),
+            category: item.category || item.Category || "Couple Item",
+            image: item.imageUrl || item['Image URL'] || "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8",
+            description: item.description || item.Description || "এক্সক্লুসিভ কাপল প্রোডাক্ট।"
+          }));
+          setProducts(formattedProducts);
+        }
+      } catch (error) {
+        console.error("প্রোডাক্ট লোড করতে সমস্যা হয়েছে");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="text-center py-20 text-rose-500 font-bold">
+        প্রোডাক্ট লোড হচ্ছে...
+      </div>
+    );
+  }
+
   return (
-    <section className="px-4 mt-6 mb-14">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <section className="px-4 py-6">
+      <h2 className="text-xl font-black text-gray-800 mb-4">আমাদের এক্সক্লুসিভ কালেকশন</h2>
+      <div className="grid grid-cols-2 gap-4">
         {products.map((product) => (
-          <article
-            key={product.id}
-            className="relative flex flex-col justify-between overflow-hidden rounded-3xl border border-rose-100/80 bg-white p-4 shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-lift md:p-6"
-          >
-            <span className="absolute top-6 right-6 z-10 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 px-3 py-1 text-[10px] font-black uppercase text-white shadow-md md:text-xs">
-              {product.badge}
-            </span>
-
-            <div>
-              <div
-                onClick={() => onDetails(product)}
-                className="group relative mb-4 h-56 cursor-pointer overflow-hidden rounded-2xl border border-rose-100/60 bg-rose-50/40 shadow-inner md:h-64"
-              >
-                <Image
-                  src={product.images[0]}
-                  alt={product.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover transition duration-500 group-hover:scale-105"
-                />
-                <span className="absolute bottom-2 left-2 z-10 rounded-lg bg-gray-900/70 px-2.5 py-0.5 text-[11px] font-bold text-white backdrop-blur-md">
-                  ✨ {product.saving}
-                </span>
-              </div>
-
-              <h3
-                onClick={() => onDetails(product)}
-                className="mb-1.5 cursor-pointer text-base font-semibold leading-snug text-gray-900 transition hover:text-rose-600 md:text-xl"
-              >
-                {product.name}
-              </h3>
-              <p className="mb-3 line-clamp-2 text-[11px] leading-relaxed text-gray-500 md:text-xs">
-                {product.description}
-              </p>
+          <div key={product.id} className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden flex flex-col">
+            <div className="aspect-square bg-gray-100 relative overflow-hidden">
+              <img 
+                src={product.image} 
+                alt={product.name} 
+                className="w-full h-full object-cover hover:scale-105 transition duration-300" 
+              />
             </div>
-
-            <div>
-              <div className="mb-3 flex items-center gap-2 rounded-xl border border-rose-100/80 bg-rose-50/50 p-2.5">
-                <span className="text-2xl font-black text-rose-600 md:text-3xl">
-                  {taka(product.basePrice)}
+            <div className="p-3 flex flex-col flex-1 justify-between">
+              <div>
+                <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded">
+                  {product.category}
                 </span>
-                <span className="text-sm font-semibold text-gray-400 line-through">
-                  {product.originalPrice}
-                </span>
-                <span className="ml-auto rounded-md border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                  In Stock
-                </span>
+                <h3 className="text-sm font-bold text-gray-800 mt-1 line-clamp-2">
+                  {product.name}
+                </h3>
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => onDetails(product)}
-                  className="w-full cursor-pointer rounded-xl border border-gray-200 bg-white py-3 text-xs font-bold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-                >
-                  👁️ Details
-                </button>
-                <button
-                  onClick={() => onOrder(product)}
-                  className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 py-3 text-xs font-bold text-white shadow-soft transition hover:from-rose-700 hover:to-pink-700 active:scale-95"
-                >
-                  🛒 Order Now
-                </button>
+              <div className="mt-3">
+                <span className="text-base font-black text-gray-900 block mb-2">
+                  ৳{product.price}
+                </span>
+                <div className="grid grid-cols-2 gap-1">
+                  <button 
+                    onClick={() => onDetails(product)}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold py-2 rounded-xl transition cursor-pointer"
+                  >
+                    বিস্তারিত
+                  </button>
+                  <button 
+                    onClick={() => onOrder(product)}
+                    className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2 rounded-xl transition cursor-pointer shadow-sm"
+                  >
+                    অর্ডার
+                  </button>
+                </div>
               </div>
             </div>
-          </article>
+          </div>
         ))}
       </div>
     </section>

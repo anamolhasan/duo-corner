@@ -1,5 +1,7 @@
+"use client";
 
 import Image from "next/image";
+import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 
 const trustChips = [
   "🚚 COD Available",
@@ -12,8 +14,43 @@ type HeroProps = {
 };
 
 export default function Hero({ onHome }: HeroProps) {
+  // ইউজার লগ-ইন করা আছে কি না, তা চেক করার নতুন নিয়ম
+  const { isSignedIn } = useUser();
+
   return (
     <header className="px-4 pt-5">
+      
+      {/* টপ বার: সার্চ বক্স এবং লগ-ইন বাটন */}
+      <div className="mb-4 flex items-center justify-between gap-4">
+        
+        {/* সার্চ বার */}
+        <div className="relative w-full max-w-md">
+          <input
+            type="text"
+            placeholder="প্রোডাক্ট খুঁজুন (যেমন: Couple Bracelet)..."
+            className="w-full rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 shadow-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
+          />
+          <span className="absolute right-3 top-2.5 text-lg cursor-pointer">
+            🔍
+          </span>
+        </div>
+
+        {/* লগ-ইন বাটন */}
+        <div className="flex-shrink-0">
+          {isSignedIn ? (
+            <UserButton />
+          ) : (
+            <SignInButton mode="modal">
+              <button className="rounded-full bg-rose-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-rose-600">
+                লগ-ইন করুন
+              </button>
+            </SignInButton>
+          )}
+        </div>
+
+      </div>
+
+      {/* ব্যানার সেকশন */}
       <div
         onClick={onHome}
         className="group relative isolate min-h-[430px] cursor-pointer overflow-hidden rounded-[32px] border border-white/20 shadow-[0_25px_80px_-20px_rgba(244,63,94,0.35)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_35px_100px_-20px_rgba(244,63,94,0.45)]"
@@ -49,14 +86,6 @@ export default function Hero({ onHome }: HeroProps) {
             <span className="h-1.5 w-1.5 rounded-full bg-rose-300 shadow-[0_0_10px_rgba(253,164,175,0.9)]" />
             Official Store
           </div>
-
-         
-          {/* Tagline */}
-          <p className="max-w-md text-sm font-medium leading-7 text-white/85 md:text-base">
-            Make every moment special with our exclusive
-            <br className="hidden sm:block" />
-            couple collection.
-          </p>
 
           {/* Trust Chips */}
           <div className="mt-7 flex max-w-xl flex-wrap justify-center gap-2">
