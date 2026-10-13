@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useClerk } from '@clerk/nextjs';
 
 type Order = {
   id?: string | number;
@@ -26,6 +26,7 @@ type Order = {
 
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | number | null>(null);
@@ -140,15 +141,30 @@ export default function AdminDashboard() {
     setIsUploading(false);
   };
 
-  if (!isLoaded) return <div className="p-20 text-center text-xl font-bold">অপেক্ষা করুন...</div>;
+  // ১. যদি Clerk লোড হতে থাকে তবে সিম্পল লোডার দেখাবে
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-500 font-bold text-lg animate-pulse">লোড হচ্ছে...</div>
+      </div>
+    );
+  }
 
+  // ২. অ্যাডমিন ইমেইল চেক
   const adminEmail = "mdimranatick@gmail.com";
   const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-  if (userEmail !== adminEmail) {
+  
+  if (!user || userEmail !== adminEmail) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-rose-50">
-        <h1 className="text-4xl font-bold text-red-600 mb-4">দুঃখিত! 🚫</h1>
-        <p className="text-lg text-gray-700">এই পেজটি শুধুমাত্র Duo Corner-এর অ্যাডমিনের জন্য।</p>
+      <div className="flex h-screen flex-col items-center justify-center bg-rose-50 p-6 text-center">
+        <h1 className="text-3xl font-bold text-red-600 mb-2">দুঃখিত! 🚫</h1>
+        <p className="text-gray-700 mb-4">এই পেজটি শুধুমাত্র Duo Corner-এর অ্যাডমিনের জন্য।</p>
+        <button 
+          onClick={() => signOut()}
+          className="bg-rose-600 text-white font-bold px-6 py-2.5 rounded-xl shadow hover:bg-rose-700 transition"
+        >
+          অন্য অ্যাকাউন্টে সাইন ইন করুন / লগআউট
+        </button>
       </div>
     );
   }
@@ -157,28 +173,42 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-gray-50/60 p-4 md:p-8 font-sans text-gray-900">
       <div className="max-w-7xl mx-auto">
         
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-pink-100 mb-6">
-          <span className="bg-pink-100 text-pink-700 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
-            👑 Admin Control Panel
-          </span>
-          <h1 className="text-2xl md:text-3xl font-black text-gray-900 mt-2">Duo Corner Dashboard</h1>
+        {/* হেডার এবং লগআউট বাটন */}
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-pink-100 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <span className="bg-pink-100 text-pink-700 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
+              👑 Admin Control Panel
+            </span>
+            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mt-2">Duo Corner Dashboard</h1>
+            <p className="text-xs text-gray-500 mt-1">লগইন করা অ্যাডমিন: <span className="font-bold text-gray-700">{userEmail}</span></p>
+          </div>
           
-          <div className="flex gap-4 mt-6 border-b border-gray-200 pb-2 overflow-x-auto">
+          <button 
+            onClick={() => signOut()}
+            className="bg-rose-50 text-rose-600 hover:bg-rose-100 px-4 py-2.5 rounded-xl text-xs font-extrabold border border-rose-200 transition cursor-pointer shadow-sm"
+          >
+            লগআউট / Sign Out
+          </button>
+        </div>
+
+        {/* ট্যাব নেভিগেশন */}
+        <div className="bg-white px-6 pt-4 rounded-3xl shadow-sm border border-gray-100 mb-6">
+          <div className="flex gap-4 border-b border-gray-200 pb-2 overflow-x-auto">
             <button 
               onClick={() => setActiveTab('orders')}
-              className={`pb-2 px-2 font-bold transition-all ${activeTab === 'orders' ? 'text-rose-600 border-b-2 border-rose-600' : 'text-gray-500 hover:text-rose-500'}`}
+              className={`pb-2 px-2 font-bold transition-all cursor-pointer ${activeTab === 'orders' ? 'text-rose-600 border-b-2 border-rose-600' : 'text-gray-500 hover:text-rose-500'}`}
             >
               📦 অর্ডার ড্যাশবোর্ড
             </button>
             <button 
               onClick={() => setActiveTab('upload')}
-              className={`pb-2 px-2 font-bold transition-all ${activeTab === 'upload' ? 'text-rose-600 border-b-2 border-rose-600' : 'text-gray-500 hover:text-rose-500'}`}
+              className={`pb-2 px-2 font-bold transition-all cursor-pointer ${activeTab === 'upload' ? 'text-rose-600 border-b-2 border-rose-600' : 'text-gray-500 hover:text-rose-500'}`}
             >
               ➕ প্রোডাক্ট আপলোড
             </button>
             <button 
               onClick={() => setActiveTab('categories')}
-              className={`pb-2 px-2 font-bold transition-all ${activeTab === 'categories' ? 'text-rose-600 border-b-2 border-rose-600' : 'text-gray-500 hover:text-rose-500'}`}
+              className={`pb-2 px-2 font-bold transition-all cursor-pointer ${activeTab === 'categories' ? 'text-rose-600 border-b-2 border-rose-600' : 'text-gray-500 hover:text-rose-500'}`}
             >
               📑 ক্যাটাগরি ম্যানেজমেন্ট
             </button>
@@ -188,7 +218,7 @@ export default function AdminDashboard() {
         {activeTab === 'orders' && (
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
             <div className="p-4 flex justify-end">
-              <button onClick={refreshOrders} className="bg-rose-50 text-rose-600 font-bold px-4 py-2 rounded-xl text-sm hover:bg-rose-100 transition">
+              <button onClick={refreshOrders} className="bg-rose-50 text-rose-600 font-bold px-4 py-2 rounded-xl text-sm hover:bg-rose-100 transition cursor-pointer">
                 🔄 রিফ্রেশ করুন
               </button>
             </div>
@@ -241,7 +271,7 @@ export default function AdminDashboard() {
                             <button
                               onClick={() => sendToSteadfast(order, index)}
                               disabled={actionLoading === currentId}
-                              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white font-bold px-4 py-2 rounded-xl shadow text-xs disabled:opacity-50"
+                              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white font-bold px-4 py-2 rounded-xl shadow text-xs disabled:opacity-50 cursor-pointer"
                             >
                               {actionLoading === currentId ? 'পাঠানো হচ্ছে...' : '🚚 Steadfast'}
                             </button>
@@ -266,7 +296,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">ক্যাটাগরি</label>
-                <select value={newProduct.category} onChange={(e) => setNewProduct({...newProduct, category: e.target.value})} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-rose-500">
+                <select value={newProduct.category} onChange={(e) => setNewProduct({...newProduct, category: e.target.value})} className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-rose-500 cursor-pointer">
                   <option>ব্রেসলেট (Bracelet)</option>
                   <option>নেকলেস (Necklace)</option>
                   <option>স্মার্ট ওয়াচ (Smart Watch)</option>
