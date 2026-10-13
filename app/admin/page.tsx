@@ -146,7 +146,6 @@ export default function AdminDashboard() {
 
   return (
     <>
-      {/* ১. লগইন করা না থাকলে সরাসরি আইডি ও পাসওয়ার্ড দিয়ে সাইন ইন ফর্ম দেখাবে */}
       <SignedOut>
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
           <div className="mb-6 text-center">
@@ -159,7 +158,6 @@ export default function AdminDashboard() {
         </div>
       </SignedOut>
 
-      {/* ২. লগইন করা থাকলে মূল ড্যাশবোর্ড দেখাবে */}
       <SignedIn>
         {userEmail !== adminEmail ? (
           <div className="flex h-screen flex-col items-center justify-center bg-rose-50 p-6 text-center">
@@ -176,7 +174,6 @@ export default function AdminDashboard() {
           <main className="min-h-screen bg-gray-50/60 p-4 md:p-8 font-sans text-gray-900">
             <div className="max-w-7xl mx-auto">
               
-              {/* হেডার এবং লগআউট বাটন */}
               <div className="bg-white p-6 rounded-3xl shadow-sm border border-pink-100 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                   <span className="bg-pink-100 text-pink-700 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
@@ -194,7 +191,6 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* ট্যাব নেভিগেশন */}
               <div className="bg-white px-6 pt-4 rounded-3xl shadow-sm border border-gray-100 mb-6">
                 <div className="flex gap-4 border-b border-gray-200 pb-2 overflow-x-auto">
                   <button 
