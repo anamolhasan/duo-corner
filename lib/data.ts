@@ -19,6 +19,39 @@ export type Product = {
 
 export const merchantSpecialNote = "⚠️ বিশেষ নির্দেশনা:  প্রিয় গ্রাহক, আপনি জেনেছেন আমাদের লভ্যাংশের টাকা দিয়ে অসহায় দুঃস্থ মানুষদের খাবারের ব্যবস্থা করা হবে , আপনিও আমাদের সেই মহৎ কাজের সঙ্গী হতে চলেছেন🥀 ❌বিনা প্রয়োজনে ফেইক অর্ডার করে এক টাকারও ক্ষতি করলে সেটা লভ্যাংশ থেকে কমে যাবে এবং সেই দায় আপনার উপরে থাকবে, ✅আপনার বিশ্বস্ততার জন্য সম্পূর্ণ ক্যাশ অন ডেলিভারিতে প্রোডাক্টটি পাঠানো হবে! ধন্যবাদ,";
 
+// এখানে divisionData এক্সপোর্ট করা হলো যা CheckoutForm.tsx এর জন্য দরকার
+export const divisionData: Record<string, Record<string, string[]>> = {
+  "Dhaka": {
+    "Dhaka": ["Dhaka Sadar", "Gulshan", "Banani", "Dhanmondi", "Mirpur", "Uttara", "Savar", "Keraniganj"],
+    "Gazipur": ["Gazipur Sadar", "Kaliakair", "Kapasia", "Sreepur", "Kaliganj"],
+    "Narayanganj": ["Narayanganj Sadar", "Bandar", "Rupganj", "Sonargaon", "Araihazar"]
+  },
+  "Habiganj": {
+    "Habiganj": ["Habiganj Sadar", "Bahubal", "Chunarughat", "Madhabpur", "Nabiganj", "Ajmiriganj", "Baniachong", "Lakhai", "Shaistaganj"]
+  },
+  "Sylhet": {
+    "Sylhet": ["Sylhet Sadar", "Beanibazar", "Vishwanath", "Companiganj", "Fenchuganj", "Golapganj", "Gowainghat", "Jaintapur", "Kanaighat"],
+    "Moulvibazar": ["Moulvibazar Sadar", "Sreemangal", "Kulaura", "Kamalganj"]
+  },
+  "Chittagong": {
+    "Chittagong": ["Chittagong Sadar", "Pahartali", "Kotwali", "Chandgaon", "Double Mooring", "Hathazari", "Sitakunda"],
+    "Cox's Bazar": ["Cox's Bazar Sadar", "Chakaria", "Teknaf", "Ramu"]
+  },
+  "Barishal": {
+    "Barishal": ["Barishal Sadar", "Bakerganj", "Babuganj", "Wazirpur", "Mehendiganj", "Muladi", "Hizla"],
+    "Bhola": ["Bhola Sadar", "Char Fasson", "Burhanuddin"]
+  },
+  "Rajshahi": {
+    "Rajshahi": ["Rajshahi Sadar", "Boalia", "Motihar", "Shah Makhdum", "Paba", "Tanore"],
+    "Bogura": ["Bogura Sadar", "Sherpur", "Shibganj", "Gabtali"]
+  },
+  "Khulna": {
+    "Khulna": ["Khulna Sadar", "Sonadanga", "Khalishpur", "Daulatpur", "Khan Jahan Ali"],
+    "Jashore": ["Jashore Sadar", "Abhaynagar", "Bagherpara"]
+  }
+};
+
+// পুরনো কোডের ব্যাকওয়ার্ড কম্প্যাটিবিলিটির জন্য bangladeshData ও রাখা হলো
 export const bangladeshData: { [key: string]: string[] } = {
   "Dhaka": ["Dhaka Sadar", "Gulshan", "Banani", "Dhanmondi", "Mirpur", "Uttara", "Savar", "Keraniganj"],
   "Habiganj": ["Habiganj Sadar", "Bahubal", "Chunarughat", "Madhabpur", "Nabiganj", "Ajmiriganj", "Baniachong", "Lakhai", "Shaistaganj"],
@@ -43,7 +76,6 @@ export const parseImages = (input: any): string[] => {
       return clean ? (clean.startsWith('/') ? clean : '/' + clean) : '';
     }).filter(Boolean);
   }
-  // যদি কোনো নির্দিষ্ট ছবি না থাকে তবে ৪টি ছবিই ডিফল্ট দেখাবে
   return ["/parl.jpg", "/parl1.jpg", "/parl2.jpg", "/parl3.jpg"];
 };
 
@@ -54,7 +86,6 @@ export const products: Product[] = [
     shortName: "Love parl Necklace",
     basePrice: 799,
     originalPrice: "৳999",
-    // এখানে আপনার ৪টি ছবিই অ্যারে হিসেবে যুক্ত করা হলো
     images: parseImages("parl.jpg, parl1.jpg, parl2.jpg, parl3.jpg"),
     videoUrl: "/video.mp4",
     badge: "🔥 Hot",
