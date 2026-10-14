@@ -1,15 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import type { Product } from '@/lib/data';
+import { products as localProducts } from '@/lib/data';
 
 type ProductGridProps = {
   onDetails: (product: Product) => void;
   onOrder: (product: Product) => void;
+  searchQuery?: string;
 };
 
-export default function ProductGrid({ onDetails, onOrder }: ProductGridProps) {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: ProductGridProps) {
+  const [products, setProducts] = useState<Product[]>(localProducts);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -21,43 +22,46 @@ export default function ProductGrid({ onDetails, onOrder }: ProductGridProps) {
         }
       } catch (error) {
         console.error("প্রোডাক্ট লোড করতে সমস্যা হয়েছে");
-      } finally {
-        setLoading(false);
       }
     };
     fetchProducts();
   }, []);
 
-  if (loading) {
+  // রিয়েল-টাইম সার্চ ফিল্টারিং লজিক
+  const filteredProducts = products.filter(product => {
+    const name = product.name || (product as any).productName || '';
+    const desc = product.description || '';
     return (
-      <div className="text-center py-20 text-rose-500 font-bold">
-        প্রোডাক্ট লোড হচ্ছে...
-      </div>
+      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      desc.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }
+  });
 
   return (
     <section className="px-4 py-6">
-      <h2 className="text-xl font-black text-gray-800 mb-4">আমাদের এক্সক্লুসিভ কালেকশন</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-black text-gray-800">আমাদের এক্সক্লুসিভ কালেকশন</h2>
+        {searchQuery && (
+          <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
+            সার্চ রেজাল্ট ({filteredProducts.length})
+          </span>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
-        {products.map((product, index) => {
+        {filteredProducts.map((product, index) => {
           const prodId = product.id || index + 1;
-          const prodName = product.productName || product.Name || product.name || product['Product Name'] || "Product";
-          const prodPrice = Number(product.price || product.Price || 799);
-          const prodCategory = product.category || product.Category || "Couple Item";
+          const prodName = product.name || (product as any).productName || "Product";
+          const prodPrice = Number(product.basePrice || (product as any).price || 799);
+          const prodCategory = (product as any).category || "Couple Item";
           
-          // ইমেজ বের করার নিরাপদ লজিক
           let prodImage = "/parl.jpg";
           if (Array.isArray(product.images) && product.images.length > 0) {
             prodImage = product.images[0];
-          } else if (product.image) {
-            prodImage = product.image;
-          } else if (product.imageUrl) {
-            prodImage = product.imageUrl;
           }
 
           return (
-            <div key={prodId} className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden flex flex-col">
+            <div key={prodId} className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden flex flex-col transition-all hover:shadow-md">
               <div className="aspect-square bg-gray-100 relative overflow-hidden">
                 <img 
                   src={prodImage} 
@@ -99,6 +103,12 @@ export default function ProductGrid({ onDetails, onOrder }: ProductGridProps) {
           );
         })}
       </div>
+
+      {filteredProducts.length === 0 && (
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+          <p className="text-sm font-bold text-gray-600 mb-2">দুঃখিত! কোনো পণ্য পাওয়া যায়নি।</p>
+        </div>
+      )}
     </section>
   );
 }

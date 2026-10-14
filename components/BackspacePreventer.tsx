@@ -1,44 +1,30 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+'use client';
+import { useEffect } from 'react';
 
 export default function BackspacePreventer() {
-  const router = useRouter();
-  const pathname = usePathname();
-
   useEffect(() => {
-    // ব্রাউজারের হিস্ট্রি ধরে রাখার জন্য স্টেট পুশ করা
-    window.history.pushState(null, "", window.location.href);
+    // ব্রাউজারের হিস্ট্রি স্ট্যাটাস পুশ করে রাখা যাতে ব্যাক বাটনে ক্লিক করলে সাইট থেকে বের না হয়ে যায়
+    window.history.pushState(null, '', window.location.href);
 
-    const handlePopState = (e: PopStateEvent) => {
-      e.preventDefault();
-      if (pathname !== "/") {
-        router.push("/");
-      } else {
-        window.history.pushState(null, "", window.location.href);
-      }
+    const handlePopState = () => {
+      window.history.pushState(null, '', window.location.href);
+      alert('দুঃখিত! এই পেজ থেকে ব্যাকে যাওয়া যাবে না।');
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "Backspace" &&
-        !(document.activeElement instanceof HTMLInputElement ||
-          document.activeElement instanceof HTMLTextAreaElement)
-      ) {
+      if (e.key === 'Backspace' && (e.target as HTMLElement).tagName !== 'INPUT' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
         e.preventDefault();
-        router.push("/");
       }
     };
 
-    window.addEventListener("popstate", handlePopState);
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [pathname, router]);
+  }, []);
 
   return null;
 }
