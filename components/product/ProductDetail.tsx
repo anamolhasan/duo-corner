@@ -417,9 +417,20 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             ></textarea>
           </div>
 
-          {/* আপনার আসল মহৎ উদ্যোগের বিশেষ নোট (মার্চেন্ট স্পেশাল নোট) */}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-gray-800 space-y-2 leading-relaxed shadow-sm">
-            <p>{merchantSpecialNote}</p>
+          {/* আপনার আগের সেই সুন্দর ও সাজানো-গুছানো ডিজাইন করা বিশেষ নোট */}
+          <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 text-xs text-gray-800 space-y-2.5 leading-relaxed shadow-sm">
+            <div className="flex items-center gap-2 font-bold text-amber-900 border-b border-amber-200/60 pb-2">
+              <span className="text-base">⚠️</span> বিশেষ নির্দেশনা ও মহৎ উদ্যোগ
+            </div>
+            <p className="font-semibold text-gray-800">
+              প্রিয় গ্রাহক, আপনি জেনেছেন আমাদের লভ্যাংশের টাকা দিয়ে অসহায় দুঃস্থ মানুষদের খাবারের ব্যবস্থা করা হবে, আপনিও আমাদের সেই মহৎ কাজের সঙ্গী হতে চলেছেন 🥀
+            </p>
+            <p className="text-rose-600 font-bold flex items-start gap-1.5">
+              <span>❌</span> <span>বিনা প্রয়োজনে ফেইক অর্ডার করে এক টাকারও ক্ষতি করলে সেটা লভ্যাংশ থেকে কমে যাবে এবং সেই দায় আপনার উপরে থাকবে।</span>
+            </p>
+            <p className="text-emerald-700 font-bold flex items-start gap-1.5">
+              <span>✅</span> <span>আপনার বিশ্বস্ততার জন্য সম্পূর্ণ ক্যাশ অন ডেলিভারিতে প্রোডাক্টটি পাঠানো হবে! ধন্যবাদ।</span>
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
