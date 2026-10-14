@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import type { Product } from '@/lib/data';
 import PromoBar from '@/components/landing/PromoBar';
 import Hero from '@/components/landing/Hero';
@@ -7,6 +7,12 @@ import ProductGrid from '@/components/landing/ProductGrid';
 import Footer from '@/components/landing/Footer';
 import WhatsAppButton from '@/components/landing/WhatsAppButton';
 import ProductDetail from '@/components/product/ProductDetail';
+
+const ProductDetailView = ProductDetail as ComponentType<{
+  product: Product;
+  onBack?: () => void;
+  onBackHome?: () => void;
+}>;
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<'home' | 'detail'>('home');
@@ -49,7 +55,11 @@ export default function Home() {
       )}
 
       {viewMode === 'detail' && activeProduct && (
-        <ProductDetail product={activeProduct} onBack={() => setViewMode('home')} />
+        <ProductDetailView
+          product={activeProduct}
+          onBack={() => setViewMode('home')}
+          onBackHome={() => setViewMode('home')}
+        />
       )}
 
       <Footer />
