@@ -55,40 +55,81 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
         {filteredProducts.map((product, index) => {
           const prodId = product.id || index + 1;
           const prodName = product.name || (product as any).productName || (product as any).Name || "Product";
-          const prodPrice = Number((product as any).basePrice || product.basePrice || (product as any).price || (product as any).Price || 799);
+          
+          // ডুয়েল প্রাইস এবং ডিসকাউন্ট ক্যালকুলেশন
+          const regularPrice = Number((product as any).regularPrice || (product as any).RegularPrice || 999);
+          const offerPrice = Number((product as any).price || (product as any).Price || product.basePrice || (product as any).B || 799);
+          const discountPercent = regularPrice > offerPrice ? Math.round(((regularPrice - offerPrice) / regularPrice) * 100) : 0;
+
           const prodCategory = (product as any).category || (product as any).Category || "Couple Item";
           
           let prodImage = "/parl.jpg";
-          if (Array.isArray(product.images) && product.images.length > 0) {
+          const colImg = (product as any)['Image URL1'] || (product as any).imageUrl1 || (product as any).image;
+          if (colImg && typeof colImg === 'string' && colImg.trim() !== '') {
+            prodImage = /^https?:\/\//i.test(colImg) ? colImg : '/' + colImg.replace(/^\/+/, '');
+          } else if (Array.isArray(product.images) && product.images.length > 0) {
             prodImage = product.images[0];
-          } else if ((product as any).image) {
-            prodImage = (product as any).image;
           }
 
           return (
-            <div key={prodId} className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden flex flex-col">
-              <div className="aspect-square bg-gray-100 relative overflow-hidden">
+            <div key={prodId} className="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden flex flex-col group hover:shadow-md transition-all duration-300">
+              
+              {/* ছবির ওপর ক্লিক করলে ডিটেইলস পেজে যাবে */}
+              <div 
+                onClick={() => onDetails(product)}
+                className="aspect-square bg-gray-100 relative overflow-hidden cursor-pointer"
+              >
+                {/* আই-ক্যাচি ডিসকাউন্ট ব্যাজ */}
+                {discountPercent > 0 && (
+                  <span className="absolute top-2.5 left-2.5 z-10 bg-gradient-to-r from-rose-600 to-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-lg shadow-lg tracking-wider animate-pulse">
+                    🔥 {discountPercent}% OFF
+                  </span>
+                )}
                 <img 
                   src={prodImage} 
                   alt={prodName} 
-                  className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/parl.jpg";
+                  }}
                 />
               </div>
-              <div className="p-3 flex flex-col flex-1 justify-between">
+
+              <div className="p-3.5 flex flex-col flex-1 justify-between">
                 <div>
-                  <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">
                     {prodCategory}
                   </span>
-                  <h3 className="text-sm font-bold text-gray-800 mt-1 line-clamp-2">
+                  
+                  {/* প্রোডাক্টের নামের ওপর ক্লিক করলে ডিটেইলস পেজে যাবে */}
+                  <h3 
+                    onClick={() => onDetails(product)}
+                    className="text-xs sm:text-sm font-bold text-gray-800 mt-1.5 line-clamp-2 cursor-pointer hover:text-rose-600 transition"
+                  >
                     {prodName}
                   </h3>
                 </div>
 
                 <div className="mt-3">
-                  <span className="text-base font-black text-gray-900 block mb-2">
-                    ৳{prodPrice}
-                  </span>
-                  <div className="grid grid-cols-2 gap-1">
+                  {/* অফার প্রাইস ফোকাস করার জন্য প্রিমিয়াম হাইলাইট বক্স */}
+                  <div className="bg-gradient-to-r from-rose-50 to-orange-50 border border-rose-200/60 p-2 rounded-xl mb-3 flex items-center justify-between shadow-xs">
+                    <div>
+                      <span className="text-[9px] font-black text-rose-600 uppercase tracking-wider block">বিশেষ মূল্য</span>
+                      <span className="text-lg sm:text-xl font-black text-rose-600 tracking-tight leading-none">
+                        ৳{offerPrice}
+                      </span>
+                    </div>
+                    {regularPrice > offerPrice && (
+                      <div className="text-right">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">নিয়মিত মূল্য</span>
+                        <span className="text-xs font-bold text-gray-400 line-through">
+                          ৳{regularPrice}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1.5">
                     <button 
                       onClick={() => onDetails(product)}
                       className="bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold py-2 rounded-xl transition cursor-pointer"

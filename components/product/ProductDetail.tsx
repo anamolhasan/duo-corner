@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import type { Product } from '@/lib/data';
-import { divisionData, merchantSpecialNote } from '@/lib/data';
+import { divisionData } from '@/lib/data';
 
 type ProductDetailProps = {
   product: Product;
@@ -12,7 +12,14 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const p = product as any;
   
   const productName = p.name || p.productName || p['Product Name'] || "Product";
-  const productPrice = Number(p.basePrice || p.price || p.Price || p.B || 799);
+  
+  // প্রফেশনাল ডুয়েল প্রাইস হ্যান্ডলিং (Regular Price & Offer Price)
+  const regularPrice = Number(p.regularPrice || p.RegularPrice || p.regular_price || p.regular || 999);
+  const offerPrice = Number(p.price || p.offerPrice || p.OfferPrice || p.Price || p.B || 799);
+  
+  // ডিসকাউন্টের শতকরা হার (%) হিসাব করা
+  const discountPercent = regularPrice > offerPrice ? Math.round(((regularPrice - offerPrice) / regularPrice) * 100) : 0;
+
   const productCategory = p.category || p.Category || p.C || "Couple Item";
   const productDescription = p.description || p.Description || p.E || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
   
@@ -21,10 +28,26 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     { label: "Design", value: "Heart-Shaped Pendant" }
   ];
 
+  // গুগল শিটের Image URL1 থেকে Image URL4 কলামগুলো থেকে ১০০% নিখুঁতভাবে ছবি সংগ্রহ
   let imageList: string[] = [];
-  if (Array.isArray(p.images) && p.images.length > 0) {
-    imageList = p.images.map((img: string) => (img.startsWith('/') ? img : '/' + img));
-  } else {
+  const columnSources = [
+    p['Image URL1'] || p.imageUrl1 || p.image_url1,
+    p['Image URL2'] || p.imageUrl2 || p.image_url2,
+    p['Image URL3'] || p.imageUrl3 || p.image_url3,
+    p['Image URL4'] || p.imageUrl4 || p.image_url4,
+  ];
+
+  columnSources.forEach(img => {
+    if (img && typeof img === 'string' && img.trim() !== '') {
+      let clean = img.trim();
+      let formatted = /^https?:\/\//i.test(clean) ? clean : '/' + clean.replace(/^\/+/, '');
+      if (!imageList.includes(formatted)) {
+        imageList.push(formatted);
+      }
+    }
+  });
+
+  if (imageList.length === 0) {
     imageList = ["/parl.jpg", "/parl1.jpg", "/parl2.jpg", "/parl3.jpg"];
   }
 
@@ -34,10 +57,9 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const [quantity, setQuantity] = useState(1);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
 
-  // বিভাগ, জেলা এবং থানার ডাইনামিক স্টেট (সরকারি তালিকা অনুযায়ী)
+  // বিভাগ, জেলা এবং থানার ডাইনামিক স্টেট
   const divisions = Object.keys(divisionData);
   const [selectedDivision, setSelectedDivision] = useState(divisions[0] || 'ঢাকা');
 
@@ -55,7 +77,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  // বিভাগ পরিবর্তনের হ্যান্ডলার
   const handleDivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const div = e.target.value;
     setSelectedDivision(div);
@@ -66,7 +87,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     setSelectedThana(newThanas[0] || '');
   };
 
-  // জেলা পরিবর্তনের হ্যান্ডলার
   const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const dist = e.target.value;
     setSelectedDistrict(dist);
@@ -75,7 +95,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   };
 
   const deliveryCharge = selectedDivision === 'ঢাকা' ? 70 : 130; 
-  const subtotal = productPrice * quantity;
+  const subtotal = offerPrice * quantity;
   const total = subtotal + deliveryCharge;
 
   const scrollToCheckout = () => {
@@ -155,9 +175,20 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
         <span>←</span> হোমপেজে ফিরে যান
       </button>
 
-      {/* Product Image Gallery */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6">
-        <div className="w-full h-72 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 mb-3">
+      {/* Product Image Gallery & Professional Pricing */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 mb-6">
+        
+        {/* মেগা অফার ব্যানার */}
+        <div className="bg-gradient-to-r from-rose-500 to-orange-500 text-white text-xs font-bold px-3 py-2 rounded-xl mb-4 flex items-center justify-between shadow-sm">
+          <span>🔥 সীমিত সময়ের মেগা অফার! ফ্রি গিফট বক্স ও ক্যাশ অন ডেলিভারি</span>
+          {discountPercent > 0 && (
+            <span className="bg-white text-rose-600 px-2 py-0.5 rounded-lg text-[11px] font-black">
+              SAVE {discountPercent}%
+            </span>
+          )}
+        </div>
+
+        <div className="w-full h-72 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 mb-3 relative">
           <img 
             src={selectedImage} 
             alt={productName} 
@@ -168,6 +199,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           />
         </div>
 
+        {/* Thumbnails */}
         {imageList.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-2">
             {imageList.map((img: string, idx: number) => (
@@ -190,7 +222,19 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           <h1 className="text-lg font-bold text-gray-900 mt-2">
             {productName}
           </h1>
-          <p className="text-xl font-black text-orange-600 mt-1">৳{productPrice}</p>
+          
+          {/* প্রফেশনাল ডুয়েল প্রাইস ডিসপ্লে (কাটা মূল্য ও অফার মূল্য) */}
+          <div className="flex items-center gap-3 mt-2">
+            <span className="text-2xl font-black text-orange-600">৳{offerPrice}</span>
+            {regularPrice > offerPrice && (
+              <span className="text-sm font-bold text-gray-400 line-through">৳{regularPrice}</span>
+            )}
+            {discountPercent > 0 && (
+              <span className="bg-rose-100 text-rose-600 text-xs font-black px-2 py-0.5 rounded-full">
+                {discountPercent}% OFF
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-5">
@@ -259,7 +303,12 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
                 <img src={selectedImage} alt="" className="w-12 h-12 rounded-lg object-cover border" />
                 <div>
                   <h4 className="text-xs font-bold text-gray-800 line-clamp-1">{productName}</h4>
-                  <p className="text-xs font-black text-gray-900 mt-0.5">৳{productPrice * quantity}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs font-black text-orange-600">৳{offerPrice * quantity}</span>
+                    {regularPrice > offerPrice && (
+                      <span className="text-[10px] text-gray-400 line-through">৳{regularPrice * quantity}</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -297,7 +346,8 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
                   className="w-full px-3.5 py-2.5 text-xs focus:outline-none" 
                 />
               </div>
-              {/* প্রিমিয়াম ও ডাইনামিক ড্রপডাউন (বিভাগ, জেলা এবং থানা) */}
+
+              {/* বিভাগ এবং জেলা ড্রপডাউন */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 mb-1">বিভাগ (Division)</label>
@@ -336,13 +386,13 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           </div>
           
           <input 
-                type="text" 
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="ex: House no. / building / street / area" 
-                required
-                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
-              />
+            type="text" 
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="ex: House no. / building / street / area" 
+            required
+            className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
+          />
 
           <div>
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -403,18 +453,18 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
               rows={2}
               value={specialNote}
               onChange={(e) => setSpecialNote(e.target.value)}
-              placeholder="কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."
+              placeholder="Note."
               className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs focus:outline-none focus:border-[#f8931f] resize-none"
             ></textarea>
           </div>
 
-          {/* আপনার আগের সেই সুন্দর ও গোছানো ডিজাইন করা বিশেষ নোট */}
+          {/* বিশেষ নির্দেশনা ও মহৎ উদ্যোগ */}
           <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 text-xs text-gray-800 space-y-2.5 leading-relaxed shadow-sm">
             <div className="flex items-center gap-2 font-bold text-amber-900 border-b border-amber-200/60 pb-2">
               <span className="text-base">⚠️</span> বিশেষ নির্দেশনা ও মহৎ উদ্যোগ
             </div>
             <p className="font-semibold text-gray-800">
-              প্রিয় গ্রাহک, আপনি জেনেছেন আমাদের লভ্যাংশের টাকা দিয়ে অসহায় দুঃস্থ মানুষদের খাবারের ব্যবস্থা করা হবে, আপনিও আমাদের সেই মহৎ কাজের সঙ্গী হতে চলেছেন 🥀
+              প্রিয় গ্রাহক, আপনি জেনেছেন আমাদের লভ্যাংশের টাকা দিয়ে অসহায় দুঃস্থ মানুষদের খাবারের ব্যবস্থা করা হবে, আপনিও আমাদের সেই মহৎ কাজের সঙ্গী হতে চলেছেন 🥀
             </p>
             <p className="text-rose-600 font-bold flex items-start gap-1.5">
               <span>❌</span> <span>বিনা প্রয়োজনে ফেইক অর্ডার করে এক টাকারও ক্ষতি করলে সেটা লভ্যাংশ থেকে কমে যাবে এবং সেই দায় আপনার উপরে থাকবে।</span>
@@ -442,7 +492,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             disabled={loading}
             className="w-full bg-[#f8931f] hover:bg-[#e08219] text-white font-bold py-4 rounded-xl shadow-md transition cursor-pointer text-sm"
           >
-            {loading ? 'প্রসেসিং হচ্ছে...' : `অর্ডার কনফার্ম করুন (${total}.00 BDT)`}
+            {loading ? 'প্রসেসিং হচ্ছে...' : `Submit Order (${total}.00 BDT)`}
           </button>
         </form>
       </div>

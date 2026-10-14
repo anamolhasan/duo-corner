@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'inventory' | 'finance' | 'impact' | 'upload' | 'categories'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // নতুন প্রোডাক্ট স্টেট (ডুয়েল প্রাইস, ভিডিও ইউআরএল ও ৬টি ডাইনামিক স্পেসিফিকেশনসহ)
+  // নতুন প্রোডাক্ট স্টেট (ডুয়েল প্রাইস: Regular & Offer Price, আলাদা ৪টি ছবি, ভিডিও ও ৬টি স্পেসিফিকেশনসহ)
   const [newProduct, setNewProduct] = useState({
     productName: '',
     category: 'ব্রেসলেট (Bracelet)',
@@ -44,7 +44,10 @@ export default function AdminDashboard() {
     offerPrice: '',
     stock: '',
     description: '',
-    imageUrl: '',
+    imageUrl1: 'parl.jpg',
+    imageUrl2: 'parl1.jpg',
+    imageUrl3: 'parl2.jpg',
+    imageUrl4: 'parl3.jpg',
     videoUrl: '',
     specs: [
       { label: 'Product Type', value: '' },
@@ -132,35 +135,35 @@ export default function AdminDashboard() {
 
   const handleUploadProduct = async () => {
     if (!newProduct.productName || !newProduct.offerPrice) {
-      alert("দয়া করে প্রোডাক্টের নাম এবং অফার প্রাইস লিখুন!");
+      alert("দয়া করে প্রোডাক্টের নাম এবং অফার প্রাইস (বিক্রয় মূল্য) লিখুন!");
       return;
     }
     setIsUploading(true);
     try {
-      const formattedImages = newProduct.imageUrl
-        ? newProduct.imageUrl.split(',').map(img => img.trim()).filter(Boolean).join(', ')
-        : 'parl.jpg, parl1.jpg, parl2.jpg';
-
       const validAttributes = newProduct.specs.filter(s => s.label.trim() && s.value.trim());
 
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: "add_product",
           productName: newProduct.productName,
           category: newProduct.category,
-          regularPrice: Number(newProduct.regularPrice) || Number(newProduct.offerPrice),
-          price: Number(newProduct.offerPrice),
+          regularPrice: Number(newProduct.regularPrice) || Number(newProduct.offerPrice), // রেগুলার প্রাইস (কাটা মূল্য)
+          price: Number(newProduct.offerPrice),                                         // অফার প্রাইস (বিক্রয় মূল্য)
           stock: Number(newProduct.stock) || 100,
           description: newProduct.description,
-          imageUrl: formattedImages,
+          imageUrl1: newProduct.imageUrl1 || 'parl.jpg',
+          imageUrl2: newProduct.imageUrl2 || 'parl1.jpg',
+          imageUrl3: newProduct.imageUrl3 || 'parl2.jpg',
+          imageUrl4: newProduct.imageUrl4 || 'parl3.jpg',
           videoUrl: newProduct.videoUrl || '/video.mp4',
-          attributes: validAttributes
+          attributes: JSON.stringify(validAttributes)
         })
       });
       const data = await res.json();
-      if (data.success) {
-        alert("✅ প্রোডাক্ট সফলভাবে আপলোড এবং স্পেসিফিকেশন সেভ হয়েছে!");
+      if (data.success || data.status === "success") {
+        alert("✅ প্রোডাক্ট সফলভাবে আপলোড এবং গুগল শিটে ডুয়েল প্রাইসসহ সেভ হয়েছে!");
         setNewProduct({
           productName: '',
           category: 'ব্রেসলেট (Bracelet)',
@@ -168,7 +171,10 @@ export default function AdminDashboard() {
           offerPrice: '',
           stock: '',
           description: '',
-          imageUrl: '',
+          imageUrl1: 'parl.jpg',
+          imageUrl2: 'parl1.jpg',
+          imageUrl3: 'parl2.jpg',
+          imageUrl4: 'parl3.jpg',
           videoUrl: '',
           specs: [
             { label: 'Product Type', value: '' },
@@ -475,7 +481,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Upload New Product Tab (Regular/Offer Price, Video & 6 Specs) */}
+        {/* Upload New Product Tab (Regular/Offer Price, Video, 4 Separate Images & 6 Specs) */}
         {activeTab === 'upload' && (
           <div className="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-3xl shadow-xl space-y-6">
             <h2 className="text-xl font-black text-white mb-2">নতুন প্রোডাক্ট আপলোড করুন</h2>
@@ -512,9 +518,26 @@ export default function AdminDashboard() {
                 <label className="block text-xs font-bold text-slate-300 mb-2">ডেসক্রিপশন বা বিবরণ</label>
                 <textarea rows={3} value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} placeholder="প্রোডাক্টের সুন্দর বিবরণ..." className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500"></textarea>
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-300 mb-2">ছবির নাম (কমা দিয়ে একাধিক দিন)</label>
-                <input type="text" value={newProduct.imageUrl} onChange={(e) => setNewProduct({...newProduct, imageUrl: e.target.value})} placeholder="parl.jpg, parl1.jpg, parl2.jpg" className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500" />
+
+              {/* আলাদা ৪টি ছবির ইনপুট ঘর (আপনার এক্সেল কলাম F, G, H, I এর সাথে সামঞ্জস্যপূর্ণ) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:col-span-2 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                <h3 className="text-xs font-black text-white sm:col-span-2 mb-1">🖼️ আলাদা ছবির ফাইলের নাম (Image URL 1 to 4)</h3>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 mb-1">Image URL 1</label>
+                  <input type="text" value={newProduct.imageUrl1} onChange={(e) => setNewProduct({...newProduct, imageUrl1: e.target.value})} placeholder="parl.jpg" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 mb-1">Image URL 2</label>
+                  <input type="text" value={newProduct.imageUrl2} onChange={(e) => setNewProduct({...newProduct, imageUrl2: e.target.value})} placeholder="parl1.jpg" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 mb-1">Image URL 3</label>
+                  <input type="text" value={newProduct.imageUrl3} onChange={(e) => setNewProduct({...newProduct, imageUrl3: e.target.value})} placeholder="parl2.jpg" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 mb-1">Image URL 4</label>
+                  <input type="text" value={newProduct.imageUrl4} onChange={(e) => setNewProduct({...newProduct, imageUrl4: e.target.value})} placeholder="parl3.jpg" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500" />
+                </div>
               </div>
             </div>
 
