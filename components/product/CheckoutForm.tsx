@@ -24,8 +24,10 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
   const [quantity, setQuantity] = useState(1);
   const [deliveryArea, setDeliveryArea] = useState<'inside' | 'outside'>('inside');
 
-  const [selectedDistrict, setSelectedDistrict] = useState('Habiganj');
-  const [selectedThana, setSelectedThana] = useState('Habiganj Sadar');
+  // ডিস্ট্রিক্ট ও থানার স্টেট (ডিফল্ট প্রথম ডিস্ট্রিক্ট ও তার প্রথম থানা সেট করা)
+  const districts = Object.keys(bangladeshData);
+  const [selectedDistrict, setSelectedDistrict] = useState(districts[0] || 'Habiganj');
+  const [selectedThana, setSelectedThana] = useState(bangladeshData[districts[0]]?.[0] || 'Habiganj Sadar');
 
   const [formData, setFormData] = useState({ name: '', phone: '', address: '', note: '', trxId: '' });
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -35,24 +37,49 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
   const productTotal = product.basePrice * quantity;
   const grandTotal = productTotal + deliveryCharge;
 
+  // ডিস্ট্রিক্ট বদলালে সাথে সাথে ওই ডিস্ট্রিক্টের থানাগুলো আপডেট হওয়ার ফাংশন
   const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const district = e.target.value;
     setSelectedDistrict(district);
-    setSelectedThana(bangladeshData[district]?.[0] || '');
+    const thanas = bangladeshData[district] || [];
+    setSelectedThana(thanas[0] || ''); // নতুন ডিস্ট্রিক্টের প্রথম থানা সিলেক্ট হবে
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // ১. ফোন নম্বর অবশ্যই ১১ ডিজিটের হতে হবে
-    if (formData.phone.length !== 11) {
-      alert('দয়া করে সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন!');
+    // ১. নাম চেক
+    if (!formData.name.trim()) {
+      alert('দয়া করে আপনার সম্পূর্ণ নাম লিখুন!');
+      document.getElementById('order-name')?.focus();
       return;
     }
 
-    // ২. জেলা, থানা এবং বিস্তারিত ঠিকানা পূরণ করা বাধ্যতামূলক
-    if (!selectedDistrict || !selectedThana || !formData.address.trim()) {
-      alert('দয়া করে জেলা, থানা এবং বিস্তারিত ঠিকানা অবশ্যই পূরণ করুন!');
+    // ২. ফোন নম্বর ১১ ডিজিট ও সঠিক ফরম্যাট চেক
+    const cleanPhone = formData.phone.trim();
+    if (cleanPhone.length !== 11 || !cleanPhone.startsWith('01')) {
+      alert('দয়া করে সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন (যেমন: 017xxxxxxxx)!');
+      document.getElementById('order-phone')?.focus();
+      return;
+    }
+
+    // ৩. জেলা ও থানা চেক
+    if (!selectedDistrict) {
+      alert('দয়া করে আপনার জেলা সিলেক্ট করুন!');
+      document.getElementById('order-district')?.focus();
+      return;
+    }
+
+    if (!selectedThana) {
+      alert('দয়া করে আপনার থানা সিলেক্ট করুন!');
+      document.getElementById('order-thana')?.focus();
+      return;
+    }
+
+    // ৪. বিস্তারিত ঠিকানা চেক
+    if (!formData.address.trim()) {
+      alert('দয়া করে আপনার বিস্তারিত ঠিকানা (এলাকা/রোড/বাসা নং) লিখুন!');
+      document.getElementById('order-address')?.focus();
       return;
     }
 
@@ -63,6 +90,7 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...formData,
+            phone: cleanPhone,
             thana: selectedThana,
             district: selectedDistrict,
             productName: product.name,
@@ -160,7 +188,6 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
                 <input
                   id="order-name"
                   type="text"
-                  required
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Write your full name"
@@ -173,7 +200,6 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
                 <input
                   id="order-phone"
                   type="tel"
-                  required
                   maxLength={11}
                   value={formData.phone}
                   onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
@@ -189,10 +215,9 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
                     id="order-district"
                     value={selectedDistrict}
                     onChange={handleDistrictChange}
-                    required
                     className={`${inputClass} cursor-pointer`}
                   >
-                    {Object.keys(bangladeshData).map(d => <option key={d} value={d}>{d}</option>)}
+                    {districts.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
                 <div>
@@ -201,10 +226,9 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
                     id="order-thana"
                     value={selectedThana}
                     onChange={e => setSelectedThana(e.target.value)}
-                    required
                     className={`${inputClass} cursor-pointer`}
                   >
-                    {bangladeshData[selectedDistrict]?.map(t => <option key={t} value={t}>{t}</option>)}
+                    {(bangladeshData[selectedDistrict] || []).map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
               </div>
@@ -214,7 +238,6 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
                 <input
                   id="order-address"
                   type="text"
-                  required
                   value={formData.address}
                   onChange={e => setFormData({ ...formData, address: e.target.value })}
                   placeholder="House no, Road, Area"
