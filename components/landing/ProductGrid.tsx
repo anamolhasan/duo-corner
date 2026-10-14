@@ -11,6 +11,7 @@ type ProductGridProps = {
 
 export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>(localProducts);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -22,6 +23,8 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
         }
       } catch (error) {
         console.error("প্রোডাক্ট লোড করতে সমস্যা হয়েছে");
+      } finally {
+        setLoading(false);
       }
     };
     fetchProducts();
@@ -29,39 +32,41 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
 
   // রিয়েল-টাইম সার্চ ফিল্টারিং লজিক
   const filteredProducts = products.filter(product => {
-    const name = product.name || (product as any).productName || '';
-    const desc = product.description || '';
+    const prodName = product.name || (product as any).productName || (product as any).Name || "";
+    const prodDesc = product.description || (product as any).Description || "";
     return (
-      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      desc.toLowerCase().includes(searchQuery.toLowerCase())
+      prodName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prodDesc.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
 
+  if (loading) {
+    return (
+      <div className="text-center py-20 text-rose-500 font-bold">
+        প্রোডাক্ট লোড হচ্ছে...
+      </div>
+    );
+  }
+
   return (
     <section className="px-4 py-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-black text-gray-800">আমাদের এক্সক্লুসিভ কালেকশন</h2>
-        {searchQuery && (
-          <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
-            সার্চ রেজাল্ট ({filteredProducts.length})
-          </span>
-        )}
-      </div>
-
+      <h2 className="text-xl font-black text-gray-800 mb-4">আমাদের এক্সক্লুসিভ কালেকশন</h2>
       <div className="grid grid-cols-2 gap-4">
         {filteredProducts.map((product, index) => {
           const prodId = product.id || index + 1;
-          const prodName = product.name || (product as any).productName || "Product";
-          const prodPrice = Number(product.basePrice || (product as any).price || 799);
-          const prodCategory = (product as any).category || "Couple Item";
+          const prodName = product.name || (product as any).productName || (product as any).Name || "Product";
+          const prodPrice = Number((product as any).basePrice || product.basePrice || (product as any).price || (product as any).Price || 799);
+          const prodCategory = (product as any).category || (product as any).Category || "Couple Item";
           
           let prodImage = "/parl.jpg";
           if (Array.isArray(product.images) && product.images.length > 0) {
             prodImage = product.images[0];
+          } else if ((product as any).image) {
+            prodImage = (product as any).image;
           }
 
           return (
-            <div key={prodId} className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden flex flex-col transition-all hover:shadow-md">
+            <div key={prodId} className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden flex flex-col">
               <div className="aspect-square bg-gray-100 relative overflow-hidden">
                 <img 
                   src={prodImage} 
@@ -105,8 +110,8 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
       </div>
 
       {filteredProducts.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
-          <p className="text-sm font-bold text-gray-600 mb-2">দুঃখিত! কোনো পণ্য পাওয়া যায়নি।</p>
+        <div className="text-center py-10 text-gray-500 text-sm">
+          দুঃখিত! আপনার সার্চ করা নামটি দিয়ে কোনো পণ্য পাওয়া যায়নি।
         </div>
       )}
     </section>

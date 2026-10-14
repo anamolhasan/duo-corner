@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import type { Product } from '@/lib/data';
-import { divisionData, merchantSpecialNote } from '@/lib/data';
+import { divisionData } from '@/lib/data';
 
 type ProductDetailProps = {
   product: Product;
@@ -11,19 +11,30 @@ type ProductDetailProps = {
 export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const p = product as any;
   
-  const productName = p.name || p.productName || "Product";
-  const productPrice = Number(p.basePrice || p.price || 799);
-  const productCategory = p.category || "Couple Item";
-  const productDescription = p.description || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
-  const productAttributes = p.attributes || [{ label: "Product Type", value: "Gift Box" }];
+  const productName = p.name || p.productName || p['Product Name'] || "Product";
+  const productPrice = Number(p.basePrice || p.price || p.Price || p.B || 799);
+  const productCategory = p.category || p.Category || p.C || "Couple Item";
+  const productDescription = p.description || p.Description || p.E || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
+  
+  const productAttributes = p.attributes || [
+    { label: "Product Type", value: "Pearl Gift Box / Pearl Necklace" },
+    { label: "Design", value: "Heart-Shaped Pendant" }
+  ];
 
-  let imageList: string[] = Array.isArray(p.images) && p.images.length > 0 ? p.images : ["/parl.jpg"];
-  const productVideo = p.videoUrl || "/video.mp4";
+  let imageList: string[] = [];
+  if (Array.isArray(p.images) && p.images.length > 0) {
+    imageList = p.images.map((img: string) => (img.startsWith('/') ? img : '/' + img));
+  } else {
+    imageList = ["/parl.jpg", "/parl1.jpg", "/parl2.jpg", "/parl3.jpg"];
+  }
+
+  const productVideo = p.videoUrl || p.video || p.Video || "/video.mp4";
 
   const [selectedImage, setSelectedImage] = useState(imageList[0] || "/parl.jpg");
   const [quantity, setQuantity] = useState(1);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
 
   // বিভাগ, জেলা এবং থানার ডাইনামিক স্টেট
@@ -37,6 +48,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const [selectedThana, setSelectedThana] = useState(thanas[0] || '');
 
   const [paymentMethod, setPaymentMethod] = useState('cod'); 
+  const [coupon, setCoupon] = useState('');
   const [specialNote, setSpecialNote] = useState('');
   const [agreed, setAgreed] = useState(true);
   
@@ -62,22 +74,21 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     setSelectedThana(newThanas[0] || '');
   };
 
-  const deliveryCharge = selectedDivision === 'Dhaka' ? 70 : 130; 
+  const deliveryCharge = selectedDivision === 'Dhaka' ? 100 : 130; 
   const subtotal = productPrice * quantity;
   const total = subtotal + deliveryCharge;
 
   const scrollToCheckout = () => {
-    document.getElementById('one-page-checkout')?.scrollIntoView({ behavior: 'smooth' });
+    const formElement = document.getElementById('one-page-checkout');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone || !address) {
       alert("দয়া করে নাম, ফোন নম্বর এবং ঠিকানা পূরণ করুন!");
-      return;
-    }
-    if (phone.length !== 11 || !phone.startsWith('01')) {
-      alert("দয়া করে সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন!");
       return;
     }
     if (!agreed) {
@@ -97,12 +108,8 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           district: selectedDistrict,
           thana: selectedThana,
           address: address,
-          productName,
-          quantity,
-          deliveryCharge,
-          totalPrice: total,
-          paymentMethod,
-          note: specialNote
+          note: `${productName} (Qty: ${quantity}), Note: ${specialNote}, Payment: ${paymentMethod}, Delivery: ${deliveryCharge} BDT`,
+          amount: total
         })
       });
       const data = await res.json();
@@ -120,19 +127,19 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   if (orderSuccess) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl p-8 shadow-xl border border-rose-100 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+        <div className="bg-white rounded-3xl p-8 shadow-xl border border-orange-100 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
             🎉
           </div>
           <h2 className="text-2xl font-black text-gray-900 mb-2">অর্ডার সফলভাবে সম্পন্ন হয়েছে!</h2>
           <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-            খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে যোগাযোগ করবেন।
+            আপনার অর্ডারটি কনফার্ম করতে খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে যোগাযোগ করবেন।
           </p>
           <button 
             onClick={onBack}
-            className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all cursor-pointer"
+            className="w-full bg-[#f8931f] hover:bg-[#e08219] text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all cursor-pointer"
           >
-            হোমপেজে ফিরে যান
+            আরও কেনাকাটা করুন
           </button>
         </div>
       </div>
@@ -151,17 +158,24 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
       {/* Product Image Gallery */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6">
         <div className="w-full h-72 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 mb-3">
-          <img src={selectedImage} alt={productName} className="w-full h-full object-cover" />
+          <img 
+            src={selectedImage} 
+            alt={productName} 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/parl.jpg";
+            }}
+          />
         </div>
 
-        {imageList.length > 1 && (
+        {imageList.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-2">
             {imageList.map((img: string, idx: number) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setSelectedImage(img)}
-                className={`w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition cursor-pointer ${selectedImage === img ? 'border-rose-600 scale-105 shadow-md' : 'border-gray-200 opacity-70'}`}
+                className={`w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition cursor-pointer ${selectedImage === img ? 'border-[#f8931f] scale-105 shadow-md' : 'border-gray-200 opacity-70'}`}
               >
                 <img src={img} alt="" className="w-full h-full object-cover" />
               </button>
@@ -170,11 +184,13 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
         )}
 
         <div className="mt-4">
-          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md">
+          <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md">
             {productCategory}
           </span>
-          <h1 className="text-lg font-bold text-gray-900 mt-2">{productName}</h1>
-          <p className="text-xl font-black text-rose-600 mt-1">৳{productPrice}</p>
+          <h1 className="text-lg font-bold text-gray-900 mt-2">
+            {productName}
+          </h1>
+          <p className="text-xl font-black text-orange-600 mt-1">৳{productPrice}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-5">
@@ -186,41 +202,78 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           </button>
           <button 
             onClick={scrollToCheckout}
-            className="bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 px-4 rounded-xl shadow-sm text-xs transition cursor-pointer flex items-center justify-center gap-2"
+            className="bg-[#f8931f] hover:bg-[#e08219] text-white font-bold py-3 px-4 rounded-xl shadow-sm text-xs transition cursor-pointer flex items-center justify-center gap-2"
           >
             ⚡ Order Now
           </button>
         </div>
       </div>
 
-      {/* Checkout Form */}
+      {/* Product Specifications & Details Box */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 mb-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+          <h3 className="text-xs font-black text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-orange-500">⚡</span> PRODUCT SPECIFICATIONS
+          </h3>
+          <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded">100% ORIGINAL</span>
+        </div>
+
+        <div className="divide-y divide-gray-50 text-xs">
+          {productAttributes.map((attr: { label: string; value: string }, idx: number) => (
+            <div key={idx} className="py-2.5 grid grid-cols-3 gap-4 items-center">
+              <span className="font-medium text-gray-500">{attr.label}</span>
+              <span className="col-span-2 font-semibold text-gray-800">{attr.value}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-2">
+          <h4 className="text-xs font-bold text-gray-800 mb-1">{productName}</h4>
+          <p className="text-[11px] text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+            {productDescription}
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Product Video Review (ভিডিও রিভিউ)
+          </h3>
+          <div className="rounded-xl overflow-hidden bg-black border border-gray-200 aspect-video flex items-center justify-center">
+            <video src={productVideo} controls autoPlay muted loop className="w-full h-full object-cover">
+              আপনার ব্রাউজার ভিডিও ট্যাগ সাপোর্ট করে না।
+            </video>
+          </div>
+        </div>
+      </div>
+
+      {/* Checkout Form - আপনার আসল ডিজাইন */}
       <div id="one-page-checkout" className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-200 scroll-mt-6">
         <form onSubmit={handleOrderSubmit} className="space-y-6">
 
           <div>
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span className="w-1.5 h-4 bg-rose-600 rounded-full"></span> Order Review
+              <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Order review
             </h3>
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <img src={selectedImage} alt="" className="w-12 h-12 rounded-lg object-cover border" />
                 <div>
                   <h4 className="text-xs font-bold text-gray-800 line-clamp-1">{productName}</h4>
-                  <p className="text-xs font-black text-gray-900 mt-0.5">৳{subtotal}</p>
+                  <p className="text-xs font-black text-gray-900 mt-0.5">৳{productPrice * quantity}</p>
                 </div>
               </div>
 
               <div className="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden shadow-sm">
-                <button type="button" onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-2.5 py-1 font-bold text-xs">-</button>
+                <button type="button" onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-2.5 py-1 text-gray-600 hover:bg-gray-100 font-bold text-xs">-</button>
                 <span className="px-3 py-1 text-xs font-bold text-gray-900">{quantity}</span>
-                <button type="button" onClick={() => setQuantity(q => q + 1)} className="px-2.5 py-1 font-bold text-xs">+</button>
+                <button type="button" onClick={() => setQuantity(q => q + 1)} className="px-2.5 py-1 text-gray-600 hover:bg-gray-100 font-bold text-xs">+</button>
               </div>
             </div>
           </div>
 
           <div>
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <span className="w-1.5 h-4 bg-rose-600 rounded-full"></span> Shipping Address
+              <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Shipping Address
             </h3>
             
             <div className="space-y-3">
@@ -228,97 +281,152 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
                 type="text" 
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="আপনার নাম (Full Name) *" 
+                placeholder="Your Full Name *" 
                 required
-                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-rose-500" 
+                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
               />
 
               <div className="flex items-center border border-gray-300 rounded-xl overflow-hidden bg-white">
                 <div className="bg-gray-100 px-3 py-2.5 text-xs font-bold text-gray-600 border-r border-gray-300">88</div>
                 <input 
                   type="text" 
-                  maxLength={11}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                  placeholder="017******** (১১ ডিজিট) *" 
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="017********" 
                   required
                   className="w-full px-3.5 py-2.5 text-xs focus:outline-none" 
                 />
               </div>
 
-              {/* বিভাগ ও জেলা ড্রপডাউন */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 block mb-1">বিভাগ (Division)</label>
-                  <select 
-                    value={selectedDivision}
-                    onChange={handleDivisionChange}
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-rose-500 cursor-pointer"
-                  >
-                    {divisions.map(div => <option key={div} value={div}>{div}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold text-gray-500 block mb-1">জেলা (District)</label>
-                  <select 
-                    value={selectedDistrict}
-                    onChange={handleDistrictChange}
-                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-rose-500 cursor-pointer"
-                  >
-                    {districts.map(dist => <option key={dist} value={dist}>{dist}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* থানা ড্রপডাউন */}
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 block mb-1">থানা / উপজেলা (Thana)</label>
-                <select 
-                  value={selectedThana}
-                  onChange={(e) => setSelectedThana(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-rose-500 cursor-pointer"
-                >
-                  {thanas.map(thana => <option key={thana} value={thana}>{thana}</option>)}
-                </select>
-              </div>
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@gmail.com (Optional)" 
+                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
+              />
 
               <input 
                 type="text" 
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="বিস্তারিত ঠিকানা (বাসা নং, রোড, এলাকা) *" 
+                placeholder="ex: House no. / building / street / area" 
                 required
-                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-rose-500" 
+                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
               />
+
+              {/* বিভাগ, জেলা এবং থানা ড্রপডাউন (আপনার আসল ডিজাইনের ভেতরে বসানো) */}
+              <div className="grid grid-cols-2 gap-2">
+                <select 
+                  value={selectedDivision}
+                  onChange={handleDivisionChange}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f] cursor-pointer"
+                >
+                  {divisions.map(div => <option key={div} value={div}>{div}</option>)}
+                </select>
+
+                <select 
+                  value={selectedDistrict}
+                  onChange={handleDistrictChange}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f] cursor-pointer"
+                >
+                  {districts.map(dist => <option key={dist} value={dist}>{dist}</option>)}
+                </select>
+              </div>
+
+              <select 
+                value={selectedThana}
+                onChange={(e) => setSelectedThana(e.target.value)}
+                className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f] cursor-pointer"
+              >
+                {thanas.map(thana => <option key={thana} value={thana}>{thana}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Payment method
+            </h3>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div 
+                onClick={() => setPaymentMethod('cod')}
+                className={`border rounded-xl p-3 flex items-center justify-between cursor-pointer transition ${paymentMethod === 'cod' ? 'border-[#f8931f] bg-orange-50/30 ring-1 ring-[#f8931f]' : 'border-gray-200 bg-white'}`}
+              >
+                <span className="text-xs font-bold text-gray-800">💵 Cash On Delivery</span>
+                <input type="radio" checked={paymentMethod === 'cod'} readOnly className="accent-[#f8931f]" />
+              </div>
+
+              <div 
+                onClick={() => setPaymentMethod('online')}
+                className={`border rounded-xl p-3 flex items-center justify-between cursor-pointer transition ${paymentMethod === 'online' ? 'border-[#f8931f] bg-orange-50/30 ring-1 ring-[#f8931f]' : 'border-gray-200 bg-white'}`}
+              >
+                <span className="text-xs font-bold text-gray-800">💳 Online Payment</span>
+                <input type="radio" checked={paymentMethod === 'online'} readOnly className="accent-[#f8931f]" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+            <span className="text-xs font-bold text-gray-700 block mb-2">Have any coupon or gift voucher?</span>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                value={coupon}
+                onChange={(e) => setCoupon(e.target.value)}
+                placeholder="Enter Coupon" 
+                className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none"
+              />
+              <button type="button" className="bg-[#f8931f] text-white px-4 py-2 rounded-lg text-xs font-bold">Apply coupon</button>
             </div>
           </div>
 
           <div className="space-y-2 border-t border-b border-gray-200 py-3 text-xs">
             <div className="flex justify-between text-gray-600">
               <span>Sub total</span>
-              <span className="font-bold text-gray-900">৳{subtotal}</span>
+              <span className="font-bold text-gray-900">{subtotal}.00 BDT</span>
             </div>
             <div className="flex justify-between text-gray-600">
               <span>Delivery cost</span>
-              <span className="font-bold text-gray-900">৳{deliveryCharge}</span>
+              <span className="font-bold text-gray-900">{deliveryCharge}.00 BDT</span>
             </div>
             <div className="flex justify-between text-sm font-black text-gray-900 pt-1">
               <span>Total</span>
-              <span className="text-rose-600">৳{total}</span>
+              <span className="text-[#f8931f]">{total}.00 BDT</span>
             </div>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-gray-800 space-y-2 leading-relaxed shadow-sm">
-            <p>{merchantSpecialNote}</p>
+          <div>
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Special notes (Optional)</h3>
+            <textarea 
+              rows={2}
+              value={specialNote}
+              onChange={(e) => setSpecialNote(e.target.value)}
+              placeholder="কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."
+              className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs focus:outline-none focus:border-[#f8931f] resize-none"
+            ></textarea>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input 
+              type="checkbox" 
+              id="terms" 
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="w-4 h-4 accent-[#f8931f] rounded cursor-pointer" 
+            />
+            <label htmlFor="terms" className="text-[11px] text-gray-600 cursor-pointer">
+              I have read and agree to the <span className="text-orange-600 underline">Terms and Conditions</span>, <span className="text-orange-600 underline">Privacy Policy</span> & <span className="text-orange-600 underline">Refund and Return Policy</span>.
+            </label>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-4 rounded-xl shadow-lg shadow-rose-600/30 transition cursor-pointer text-sm"
+            className="w-full bg-[#f8931f] hover:bg-[#e08219] text-white font-bold py-4 rounded-xl shadow-md transition cursor-pointer text-sm"
           >
-            {loading ? 'প্রসেসিং হচ্ছে...' : `✅ অর্ডার কনফার্ম করুন (৳${total})`}
+            {loading ? 'প্রসেসিং হচ্ছে...' : `অর্ডার কনফার্ম করুন (${total}.00 BDT)`}
           </button>
         </form>
       </div>
