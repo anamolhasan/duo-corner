@@ -310,15 +310,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
                 className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
               />
 
-              <input 
-                type="text" 
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="ex: House no. / building / street / area" 
-                required
-                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
-              />
-
               <div className="grid grid-cols-2 gap-2">
                 <select 
                   value={district}
@@ -350,6 +341,14 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             </div>
           </div>
 
+ <input 
+                type="text" 
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="ex: House no. / building / street / area" 
+                required
+                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
+              />
           <div>
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
               <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Payment method
@@ -417,7 +416,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
               rows={2}
               value={specialNote}
               onChange={(e) => setSpecialNote(e.target.value)}
-              placeholder="কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."
+              placeholder="Note."
               className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs focus:outline-none focus:border-[#f8931f] resize-none"
             ></textarea>
           </div>

@@ -7,8 +7,9 @@ export type Product = {
   id: number;
   name: string;
   shortName: string;
-  basePrice: number;
-  originalPrice: string;
+  basePrice: number;       // বর্তমান অফার প্রাইস (Offer Price)
+  regularPrice?: number;   // রেগুলার প্রাইস (Regular Price)
+  originalPrice: string;   // কাটার জন্য রেগুলার প্রাইসের স্ট্রিং রূপ
   images: string[];
   videoUrl: string;
   badge: string;
@@ -17,7 +18,7 @@ export type Product = {
   attributes: ProductAttribute[];
 };
 
-export const merchantSpecialNote = "⚠️ বিশেষ নির্দেশনা: প্রিয় গ্রাহক, আপনি জেনেছেন আমাদের লভ্যাংশের টাকা দিয়ে অসহায় দুঃস্থ মানুষদের খাবারের ব্যবস্থা করা হবে , আপনিও আমাদের সেই মহৎ কাজের সঙ্গী হতে চলেছেন🥀 ❌ বিনা প্রয়োজনে ফেইক অর্ডার করে এক টাকারও ক্ষতি করলে সেটা লভ্যাংশ থেকে কমে যাবে এবং সেই দায় আপনার উপরে থাকবে, ✅ আপনার বিশ্বস্ততার জন্য সম্পূর্ণ ক্যাশ অন ডেলিভারিতে প্রোডাক্টটি পাঠানো হবে! ধন্যবাদ,";
+export const merchantSpecialNote = "⚠️ বিশেষ নির্দেশনা: প্রিয় গ্রাহক, আপনি জেনেছেন আমাদের লভ্যাংশের টাকা দিয়ে অসহায় দুঃস্থ মানুষদের খাবারের ব্যবস্থা করা হবে, আপনিও আমাদের সেই মহৎ কাজের সঙ্গী হতে চলেছেন 🥀 ❌ বিনা প্রয়োজনে ফেইক অর্ডার করে এক টাকারও ক্ষতি করলে সেটা লভ্যাংশ থেকে কমে যাবে এবং সেই দায় আপনার উপরে থাকবে। ✅ আপনার বিশ্বস্ততার জন্য সম্পূর্ণ ক্যাশ অন ডেলিভারিতে প্রোডাক্টটি পাঠানো হবে! ধন্যবাদ।";
 
 // সরকারি জাতীয় তথ্য বাতায়ন অনুযায়ী ৮ বিভাগ, জেলা এবং সঠিক উপজেলার সম্পূর্ণ তালিকা
 export const divisionData: Record<string, Record<string, string[]>> = {
@@ -125,10 +126,11 @@ export const products: Product[] = [
     name: "Love parl Necklace with gift box",
     shortName: "Love parl Necklace",
     basePrice: 799,
+    regularPrice: 999,
     originalPrice: "৳999",
     images: parseImages("parl.jpg, parl1.jpg, parl2.jpg, parl3.jpg"),
     videoUrl: "/video.mp4",
-    badge: "🔥 Hot",
+    badge: "🔥 Hot Deal",
     saving: "Save ৳200",
     description: "সুন্দর Premium Gift Box Presentation সহ চমৎকার নেকলেস সেট।",
     attributes: [

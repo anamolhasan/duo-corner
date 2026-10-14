@@ -12,10 +12,16 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const p = product as any;
   
   const productName = p.name || p.productName || p['Product Name'] || "Product";
+  
+  // ডুয়েল প্রাইসিং লজিক (অফার প্রাইস এবং রেগুলার প্রাইস)
   const productPrice = Number(p.basePrice || p.price || p.Price || p.B || 799);
+  const regularPrice = Number(p.regularPrice || p.regular_price || 0);
+  const discountAmount = regularPrice > productPrice ? regularPrice - productPrice : 0;
+
   const productCategory = p.category || p.Category || p.C || "Couple Item";
   const productDescription = p.description || p.Description || p.E || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
   
+  // প্রোডাক্ট স্পেসিফিকেশন অ্যাট্রিবিউটস
   const productAttributes = p.attributes || [
     { label: "Product Type", value: "Pearl Gift Box / Pearl Necklace" },
     { label: "Design", value: "Heart-Shaped Pendant" }
@@ -28,6 +34,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     imageList = ["/parl.jpg", "/parl1.jpg", "/parl2.jpg", "/parl3.jpg"];
   }
 
+  // ভিডিও ইউআরএল হ্যান্ডলিং
   const productVideo = p.videoUrl || p.video || p.Video || "/video.mp4";
 
   const [selectedImage, setSelectedImage] = useState(imageList[0] || "/parl.jpg");
@@ -37,7 +44,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
 
-  // বিভাগ, জেলা এবং থানার ডাইনামিক স্টেট (সরকারি তালিকা অনুযায়ী)
   const divisions = Object.keys(divisionData);
   const [selectedDivision, setSelectedDivision] = useState(divisions[0] || 'ঢাকা');
 
@@ -55,7 +61,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  // বিভাগ পরিবর্তনের হ্যান্ডলার
   const handleDivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const div = e.target.value;
     setSelectedDivision(div);
@@ -66,7 +71,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     setSelectedThana(newThanas[0] || '');
   };
 
-  // জেলা পরিবর্তনের হ্যান্ডলার
   const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const dist = e.target.value;
     setSelectedDistrict(dist);
@@ -190,7 +194,19 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           <h1 className="text-lg font-bold text-gray-900 mt-2">
             {productName}
           </h1>
-          <p className="text-xl font-black text-orange-600 mt-1">৳{productPrice}</p>
+          
+          {/* ডুয়েল প্রাইসিং এবং ডিসকাউন্ট ব্যাজ ডিসপ্লে */}
+          <div className="mt-2 flex items-center gap-3">
+            <span className="text-2xl font-black text-rose-600">৳{productPrice}</span>
+            {regularPrice > productPrice && (
+              <>
+                <span className="text-sm font-bold text-gray-400 line-through">৳{regularPrice}</span>
+                <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  Save ৳{discountAmount}
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-5">
@@ -220,10 +236,12 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
 
         <div className="divide-y divide-gray-50 text-xs">
           {productAttributes.map((attr: { label: string; value: string }, idx: number) => (
-            <div key={idx} className="py-2.5 grid grid-cols-3 gap-4 items-center">
-              <span className="font-medium text-gray-500">{attr.label}</span>
-              <span className="col-span-2 font-semibold text-gray-800">{attr.value}</span>
-            </div>
+            attr.label && attr.value ? (
+              <div key={idx} className="py-2.5 grid grid-cols-3 gap-4 items-center">
+                <span className="font-medium text-gray-500">{attr.label}</span>
+                <span className="col-span-2 font-semibold text-gray-800">{attr.value}</span>
+              </div>
+            ) : null
           ))}
         </div>
 
@@ -315,7 +333,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
                 className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
               />
 
-              {/* প্রিমিয়াম ও ডাইনামিক ড্রপডাউন (বিভাগ, জেলা এবং থানা) */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 mb-1">বিভাগ (Division)</label>
@@ -411,13 +428,12 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             <textarea 
               rows={2}
               value={specialNote}
-              onChange={(e) => setSpecialNote(e.target.value)}
+              onChange={(e) => specialNote}
               placeholder="কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."
               className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs focus:outline-none focus:border-[#f8931f] resize-none"
             ></textarea>
           </div>
 
-          {/* আপনার আগের সেই সুন্দর ও সাজানো-গুছানো ডিজাইন করা বিশেষ নোট */}
           <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 text-xs text-gray-800 space-y-2.5 leading-relaxed shadow-sm">
             <div className="flex items-center gap-2 font-bold text-amber-900 border-b border-amber-200/60 pb-2">
               <span className="text-base">⚠️</span> বিশেষ নির্দেশনা ও মহৎ উদ্যোগ
