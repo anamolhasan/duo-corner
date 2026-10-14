@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 // Clerk-কে প্রজেক্টে নিয়ে আসলাম
 import { ClerkProvider } from '@clerk/nextjs'; 
+// ব্যাকস্পেস বা ব্যাক বাটন আটকানোর কম্পোনেন্ট ইমপোর্ট করা হলো
+import BackspacePreventer from "@/components/BackspacePreventer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,6 +47,8 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} ${hindSiliguri.variable} antialiased`}
         >
+          {/* ব্যাকস্পেস বা ব্যাক বাটন প্রেস করলে সাইট থেকে বের হওয়া রোধ করতে এটি যুক্ত করা হলো */}
+          <BackspacePreventer />
           {children}
         </body>
       </html>

@@ -11,9 +11,11 @@ const trustChips = [
 
 type HeroProps = {
   onHome: () => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 };
 
-export default function Hero({ onHome }: HeroProps) {
+export default function Hero({ onHome, searchQuery, setSearchQuery }: HeroProps) {
   const { isSignedIn } = useUser();
 
   const [reviews, setReviews] = useState([
@@ -57,14 +59,16 @@ export default function Hero({ onHome }: HeroProps) {
       {/* টপ বার: সার্চ বক্স, আমার অর্ডার বাটন এবং লগ-ইন বাটন */}
       <div className="mb-4 flex items-center justify-between gap-4">
         
-        {/* সার্চ বার */}
+        {/* সার্চ বার (রিয়েল-টাইম ডাইনামিক ফিল্টার যুক্ত) */}
         <div className="relative w-full max-w-sm">
           <input
             type="text"
-            placeholder="প্রোডাক্ট খুঁজুন (যেমন: Couple Bracelet)..."
-            className="w-full rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 shadow-sm focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="প্রোডাক্ট খুঁজুন (যেমন: Couple Necklace)..."
+            className="w-full rounded-full border border-rose-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-sm transition-all focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20 placeholder:text-gray-400"
           />
-          <span className="absolute right-3 top-2.5 text-lg cursor-pointer">
+          <span className="absolute right-3.5 top-3 text-sm text-gray-400 pointer-events-none">
             🔍
           </span>
         </div>
@@ -74,7 +78,7 @@ export default function Hero({ onHome }: HeroProps) {
           
           <a
             href="/my-orders"
-            className="flex items-center gap-1 rounded-full bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-600 shadow-sm transition-all hover:bg-rose-100"
+            className="flex items-center gap-1 rounded-full bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-600 shadow-xs transition-all hover:bg-rose-100"
           >
             📦 আমার অর্ডার
           </a>
@@ -90,7 +94,7 @@ export default function Hero({ onHome }: HeroProps) {
               />
             ) : (
               <SignInButton mode="modal">
-                <button className="rounded-full bg-rose-500 px-5 py-2.5 text-xs font-semibold text-white shadow-lg transition-all hover:bg-rose-600">
+                <button className="rounded-full bg-rose-500 px-5 py-2.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-rose-600">
                   লগ-ইন করুন
                 </button>
               </SignInButton>
@@ -106,17 +110,14 @@ export default function Hero({ onHome }: HeroProps) {
         onClick={onHome}
         className="group relative isolate h-[400px] w-full cursor-pointer overflow-hidden rounded-[32px] border border-white/25 shadow-[0_25px_80px_-20px_rgba(244,63,94,0.35)] transition-all duration-500 hover:-translate-y-1"
       >
-        {/* Background Image using standard HTML img for guaranteed rendering */}
         <img 
           src="/banner.jpg" 
           alt="Duo Corner couple collection banner" 
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-300"
         />
 
-        {/* Premium Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/70" />
 
-        {/* Content */}
         <div className="relative z-10 flex h-full flex-col justify-between px-6 py-8 text-center">
           
           <div className="flex justify-center">
