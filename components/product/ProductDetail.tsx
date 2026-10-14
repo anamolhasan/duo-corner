@@ -297,24 +297,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
                   className="w-full px-3.5 py-2.5 text-xs focus:outline-none" 
                 />
               </div>
-
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@gmail.com (Optional)" 
-                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
-              />
-
-              <input 
-                type="text" 
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="ex: House no. / building / street / area" 
-                required
-                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
-              />
-
               {/* প্রিমিয়াম ও ডাইনামিক ড্রপডাউন (বিভাগ, জেলা এবং থানা) */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -352,6 +334,15 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
               </div>
             </div>
           </div>
+          
+          <input 
+                type="text" 
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="ex: House no. / building / street / area" 
+                required
+                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
+              />
 
           <div>
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
