@@ -41,10 +41,18 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
     setSelectedThana(bangladeshData[district]?.[0] || '');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!/^01[3-9]\d{8}$/.test(formData.phone)) {
-      alert('দয়া করে সঠিক ১১ ডিজিটের মোবাইল নাম্বার দিন (যেমন: 01712345678)');
+
+    // ১. ফোন নম্বর অবশ্যই ১১ ডিজিটের হতে হবে
+    if (formData.phone.length !== 11) {
+      alert('দয়া করে সঠিক ১১ সংখ্যার মোবাইল নম্বর দিন!');
+      return;
+    }
+
+    // ২. জেলা, থানা এবং বিস্তারিত ঠিকানা পূরণ করা বাধ্যতামূলক
+    if (!selectedDistrict || !selectedThana || !formData.address.trim()) {
+      alert('দয়া করে জেলা, থানা এবং বিস্তারিত ঠিকানা অবশ্যই পূরণ করুন!');
       return;
     }
 
@@ -64,6 +72,7 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
             paymentMethod: 'cod',
           }),
         });
+
         const data = await res.json();
         if (data.success) {
           setIsSubmitted(true);
@@ -180,6 +189,7 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
                     id="order-district"
                     value={selectedDistrict}
                     onChange={handleDistrictChange}
+                    required
                     className={`${inputClass} cursor-pointer`}
                   >
                     {Object.keys(bangladeshData).map(d => <option key={d} value={d}>{d}</option>)}
@@ -191,6 +201,7 @@ export default function CheckoutForm({ product, onBackHome }: CheckoutFormProps)
                     id="order-thana"
                     value={selectedThana}
                     onChange={e => setSelectedThana(e.target.value)}
+                    required
                     className={`${inputClass} cursor-pointer`}
                   >
                     {bangladeshData[selectedDistrict]?.map(t => <option key={t} value={t}>{t}</option>)}
