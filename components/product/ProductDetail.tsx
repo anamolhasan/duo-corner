@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import type { Product } from '@/lib/data';
-import { divisionData } from '@/lib/data';
+import { divisionData, merchantSpecialNote } from '@/lib/data';
 
 type ProductDetailProps = {
   product: Product;
@@ -37,9 +37,9 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
 
-  // বিভাগ, জেলা এবং থানার ডাইনামিক স্টেট
+  // বিভাগ, জেলা এবং থানার ডাইনামিক স্টেট (সরকারি তালিকা অনুযায়ী)
   const divisions = Object.keys(divisionData);
-  const [selectedDivision, setSelectedDivision] = useState(divisions[0] || 'Dhaka');
+  const [selectedDivision, setSelectedDivision] = useState(divisions[0] || 'ঢাকা');
 
   const districts = Object.keys(divisionData[selectedDivision] || {});
   const [selectedDistrict, setSelectedDistrict] = useState(districts[0] || '');
@@ -74,7 +74,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     setSelectedThana(newThanas[0] || '');
   };
 
-  const deliveryCharge = selectedDivision === 'Dhaka' ? 100 : 130; 
+  const deliveryCharge = selectedDivision === 'ঢাকা' ? 70 : 130; 
   const subtotal = productPrice * quantity;
   const total = subtotal + deliveryCharge;
 
@@ -246,7 +246,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
         </div>
       </div>
 
-      {/* Checkout Form - আপনার আসল ডিজাইন */}
+      {/* Checkout Form */}
       <div id="one-page-checkout" className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-200 scroll-mt-6">
         <form onSubmit={handleOrderSubmit} className="space-y-6">
 
@@ -315,32 +315,41 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
                 className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
               />
 
-              {/* বিভাগ, জেলা এবং থানা ড্রপডাউন (আপনার আসল ডিজাইনের ভেতরে বসানো) */}
+              {/* প্রিমিয়াম ও ডাইনামিক ড্রপডাউন (বিভাগ, জেলা এবং থানা) */}
               <div className="grid grid-cols-2 gap-2">
-                <select 
-                  value={selectedDivision}
-                  onChange={handleDivisionChange}
-                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f] cursor-pointer"
-                >
-                  {divisions.map(div => <option key={div} value={div}>{div}</option>)}
-                </select>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 mb-1">বিভাগ (Division)</label>
+                  <select 
+                    value={selectedDivision}
+                    onChange={handleDivisionChange}
+                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f] cursor-pointer"
+                  >
+                    {divisions.map(div => <option key={div} value={div}>{div}</option>)}
+                  </select>
+                </div>
 
-                <select 
-                  value={selectedDistrict}
-                  onChange={handleDistrictChange}
-                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f] cursor-pointer"
-                >
-                  {districts.map(dist => <option key={dist} value={dist}>{dist}</option>)}
-                </select>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-500 mb-1">জেলা (District)</label>
+                  <select 
+                    value={selectedDistrict}
+                    onChange={handleDistrictChange}
+                    className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f] cursor-pointer"
+                  >
+                    {districts.map(dist => <option key={dist} value={dist}>{dist}</option>)}
+                  </select>
+                </div>
               </div>
 
-              <select 
-                value={selectedThana}
-                onChange={(e) => setSelectedThana(e.target.value)}
-                className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f] cursor-pointer"
-              >
-                {thanas.map(thana => <option key={thana} value={thana}>{thana}</option>)}
-              </select>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 mb-1">থানা / উপজেলা (Thana)</label>
+                <select 
+                  value={selectedThana}
+                  onChange={(e) => setSelectedThana(e.target.value)}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none focus:border-[#f8931f] cursor-pointer"
+                >
+                  {thanas.map(thana => <option key={thana} value={thana}>{thana}</option>)}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -406,6 +415,11 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
               placeholder="কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."
               className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs focus:outline-none focus:border-[#f8931f] resize-none"
             ></textarea>
+          </div>
+
+          {/* আপনার আসল মহৎ উদ্যোগের বিশেষ নোট (মার্চেন্ট স্পেশাল নোট) */}
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-gray-800 space-y-2 leading-relaxed shadow-sm">
+            <p>{merchantSpecialNote}</p>
           </div>
 
           <div className="flex items-center gap-2">
