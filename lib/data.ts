@@ -7,9 +7,9 @@ export type Product = {
   id: number;
   name: string;
   shortName: string;
-  basePrice: number;       // Offer Price
-  regularPrice?: number;   // Regular Price
-  originalPrice: string;   
+  basePrice: number;
+  regularPrice?: number;
+  originalPrice: string;
   images: string[];
   videoUrl: string;
   badge: string;
@@ -57,7 +57,7 @@ export const divisionData: Record<string, Record<string, string[]>> = {
     "নাটোর": ["বাগাতিপাড়া", "বড়াইগ্রাম", "গুরুদাসপুর", "লালপুর", "নলডাঙ্গা", "নাটোর সদর", "সিংড়া"],
     "চাঁপাইনবাবগঞ্জ": ["ভোলাহাট", "গোমস্তাপুর", "নাচোল", "চাঁপাইনবাবগঞ্জ সদর", "শিবগঞ্জ"],
     "পাবনা": ["আটঘরিয়া", "বেড়া", "ভাঙ্গুড়া", "চাটমোহর", "ফরিদপুর", "ঈশ্বরদী", "পাবনা সদর", "সাঁথিয়া", "সুজানগর"],
-    "রাজশাহী": ["বাঘা", "বাগমara", "চারঘাট", "দুর্গাপুর", "গোদাগাড়ী", "মোহনপুর", "পবা", "পুঠিয়া", "তানোর"],
+    "রাজশাহী": ["বাঘা", "বাগমারা", "চারঘাট", "দুর্গাপুর", "গোদাগাড়ী", "মোহনপুর", "পবা", "পুঠিয়া", "তানোর"],
     "সিরাজগঞ্জ": ["বেলকুচি", "চৌহালি", "কামারখন্দ", "কাজীপুর", "রায়গঞ্জ", "শাহজাদপুর", "সিরাজগঞ্জ সদর", "তাড়াশ", "উল্লাপাড়া"]
   },
   "খুলনা": {
@@ -108,51 +108,59 @@ export const parseImages = (input: any): string[] => {
   if (Array.isArray(input)) {
     return input.map(img => {
       let clean = String(img).trim();
-      return clean.startsWith('/') ? clean : '/' + clean;
-    });
+      if (!clean) return '';
+      return /^https?:\/\//i.test(clean) ? clean : (clean.startsWith('/') ? clean : '/' + clean);
+    }).filter(Boolean);
   }
   if (typeof input === 'string' && input.trim() !== '') {
     return input.split(',').map(img => {
       let clean = img.trim();
-      return clean ? (clean.startsWith('/') ? clean : '/' + clean) : '';
+      if (!clean) return '';
+      return /^https?:\/\//i.test(clean) ? clean : (clean.startsWith('/') ? clean : '/' + clean);
     }).filter(Boolean);
   }
-  return ["/parl.jpg", "/parl1.jpg", "/parl2.jpg", "/parl3.jpg"];
+  return ["/parl.jpg"];
 };
 
-// সরাসরি গুগল শিট বা এপিআই থেকে লাইভ প্রোডাক্ট ডেটা ফেচ করার ফাংশন
 export async function getProducts(): Promise<Product[]> {
   try {
-    const res = await fetch('/api/save-order', { cache: 'no-store' });
+    const res = await fetch('/api/products', { cache: 'no-store' });
     const data = await res.json();
     
     if (Array.isArray(data) && data.length > 0) {
-      return data.map((item: any, index: number) => ({
-        id: item.id || index + 1,
-        name: item['Product Name'] || item.productName || item.name || "Product",
-        shortName: item['Product Name'] || item.productName || item.name || "Product",
-        basePrice: Number(item['Offer Price'] || item.price || 799),
-        regularPrice: Number(item['Regular Price'] || item.regularPrice || 999),
-        originalPrice: `৳${item['Regular Price'] || item.regularPrice || 999}`,
-        images: parseImages([
-          item['Image URL1'] || item.imageUrl1,
-          item['Image URL2'] || item.imageUrl2,
-          item['Image URL3'] || item.imageUrl3,
-          item['Image URL4'] || item.imageUrl4
-        ]),
-        videoUrl: item['Video URL'] || item.videoUrl || "/video.mp4",
-        badge: "🔥 Hot Deal",
-        saving: "Save ৳200",
-        description: item['Description'] || item.description || "এক্সক্লুসিভ কাপল প্রোডাক্ট।",
-        attributes: [
-          { label: "Product Type", value: item['Product Type'] || "N/A" },
-          { label: "Design", value: item['Design'] || "N/A" },
-          { label: "Material", value: item['Material'] || "N/A" },
-          { label: "Color", value: item['Color'] || "N/A" },
-          { label: "Size", value: item['Size'] || "N/A" },
-          { label: "Origin", value: item['Origin'] || "N/A" }
-        ]
-      }));
+      return data.map((item: any, index: number) => {
+        const prodName = item['Product Name'] || item.productName || item.Name || "Product";
+        const offerPrice = Number(item['Offer Price'] || item.price || 799);
+        const regularPrice = Number(item['Regular Price'] || item.regularPrice || 999);
+        const category = item['Category'] || item.category || "Couple Item";
+        const description = item['Description'] || item.description || "এক্সক্লুসিভ কাপল প্রোডাক্ট।";
+        
+        // এক্সাক্ট গুগল শিটের কলাম অনুযায়ী ছবি রিড করা
+        const img1 = item['Image URL1'] || item.imageUrl1;
+        const img2 = item['Image URL2'] || item.imageUrl2;
+        const img3 = item['Image URL3'] || item.imageUrl3;
+        const img4 = item['Image URL4'] || item.imageUrl4;
+
+        const images = parseImages([img1, img2, img3, img4]);
+
+        return {
+          id: item.id || index + 1,
+          name: prodName,
+          shortName: prodName,
+          basePrice: offerPrice,
+          regularPrice: regularPrice,
+          originalPrice: `৳${regularPrice}`,
+          images: images.length > 0 ? images : ["/parl.jpg"],
+          videoUrl: item['Video URL'] || item.videoUrl || "/video.mp4",
+          badge: "🔥 Hot Deal",
+          saving: "Save ৳200",
+          description: description,
+          attributes: [
+            { label: "Product Type", value: category },
+            { label: "Stock", value: String(item['Stock'] || "100") }
+          ]
+        };
+      });
     }
     return [];
   } catch (error) {
@@ -162,7 +170,6 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export const products: Product[] = [];
-
 export const taka = (amount: number) => `৳ ${amount}`;
 export const whatsappLink = "https://wa.me/8801777156691";
 export const whatsappChatLink = "https://wa.me/8801777156691?text=Hi%20Duo%20Corner";
