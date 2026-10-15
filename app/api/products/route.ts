@@ -4,12 +4,13 @@ const GOOGLE_SHEET_URL =
   'https://script.google.com/macros/s/AKfycbyRhXgy18iGITj89GjcnblmsTWBejfYbNgPEEquYwZtxqyWolXceVQFl-BM8iWmeTg/exec';
 
 function parseImages(product: any): string[] {
+  // গুগল শিটের যেকোনো সম্ভাব্য ইমেজ কলামের নাম বা ফরম্যাট চেক করা
   let rawValues = [
-    product['Image URL1'] ?? product.imageUrl1 ?? product.image_url1,
-    product['Image URL2'] ?? product.imageUrl2 ?? product.image_url2,
-    product['Image URL3'] ?? product.imageUrl3 ?? product.image_url3,
-    product['Image URL4'] ?? product.imageUrl4 ?? product.image_url4,
-    product.imageUrl ?? product.images ?? product.F ?? product['Image URL']
+    product['Image URL1'], product['image_url1'], product['imageUrl1'], product.image1,
+    product['Image URL2'], product['image_url2'], product['imageUrl2'], product.image2,
+    product['Image URL3'], product['image_url3'], product['imageUrl3'], product.image3,
+    product['Image URL4'], product['image_url4'], product['imageUrl4'], product.image4,
+    product.imageUrl, product.images, product.F, product['Image URL'], product.image
   ];
 
   let imagesList: string[] = [];
@@ -47,15 +48,17 @@ function parseImages(product: any): string[] {
   return imagesList;
 }
 
-function normalizeProduct(product: any) {
+function normalizeProduct(product: any, index: number) {
   const images = parseImages(product);
 
   return {
     ...product,
-    name: product.productName || product.Name || product.name || product['Product Name'] || product.A || "Product",
-    price: Number(product.price || product.Price || product.B || 799),
-    category: product.category || product.Category || product.C || "Couple Item",
-    description: product.description || product.Description || product.E || "এক্সক্লুসিভ প্রোডাক্ট।",
+    id: product.id || index + 1,
+    name: product['Product Name'] || product.productName || product.Name || product.name || product.A || "Product",
+    price: Number(product['Offer Price'] || product.offerPrice || product.price || product.Price || product.B || 799),
+    regularPrice: Number(product['Regular Price'] || product.regularPrice || 999),
+    category: product['Category'] || product.category || product.Category || product.C || "Couple Item",
+    description: product['Description'] || product.description || product.Description || product.E || "এক্সক্লুসিভ প্রোডাক্ট।",
     images,
     image: images[0] ?? '/parl.jpg',
     imageUrl: images[0] ?? '/parl.jpg',
@@ -70,13 +73,14 @@ export async function GET() {
     );
 
     if (!response.ok) {
-      throw new Error('Google Sheet theke data ana jayni.');
+      throw new Error('Google Sheet থেকে ডেটা আনা যায়নি।');
     }
 
     const data = await response.json();
 
     if (Array.isArray(data)) {
-      return NextResponse.json(data.map(normalizeProduct));
+      // প্রতিটি রো বা প্রোডাক্টকে সঠিকভাবে নরমালাইজ করা হচ্ছে যাতে কোনো রো বাদ না পড়ে
+      return NextResponse.json(data.map((item, index) => normalizeProduct(item, index)));
     }
 
     return NextResponse.json(data);
@@ -113,7 +117,7 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
-      throw new Error('Google Sheet-e product pathano jayni.');
+      throw new Error('Google Sheet-এ প্রোডাক্ট পাঠানো যায়নি।');
     }
 
     return NextResponse.json({
@@ -125,7 +129,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: 'Product sanrokkhon kora jayni.',
+        message: 'Product সংরক্ষণ করা যায়নি।',
       },
       { status: 500 }
     );
