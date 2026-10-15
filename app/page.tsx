@@ -14,6 +14,12 @@ const ProductDetailView = ProductDetail as ComponentType<{
   onBackHome?: () => void;
 }>;
 
+const HeroView = Hero as ComponentType<{
+  onHome: () => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+}>;
+
 export default function Home() {
   const [viewMode, setViewMode] = useState<'home' | 'detail'>('home');
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
@@ -40,7 +46,7 @@ export default function Home() {
     <main className="relative mx-auto min-h-screen max-w-md bg-gradient-to-b from-rose-50/50 via-white to-white pb-16 font-sans text-gray-900 md:max-w-4xl shadow-xl">
       <PromoBar />
 
-      <Hero 
+      <HeroView 
         onHome={() => { setViewMode('home'); setSearchQuery(''); }} 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
