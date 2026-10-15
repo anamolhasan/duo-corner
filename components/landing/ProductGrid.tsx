@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import type { Product } from '@/lib/data';
 import { products as localProducts } from '@/lib/data';
+import Loader from '@/components/Loader';
 
 type ProductGridProps = {
   onDetails: (product: Product) => void;
@@ -39,12 +40,9 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
     );
   });
 
+  // গ্লোবাল রোমান্টিক কাপল ডান্স লোডার
   if (loading) {
-    return (
-      <div className="text-center py-20 text-rose-500 font-bold">
-        প্রোডাক্ট লোড হচ্ছে...
-      </div>
-    );
+    return <Loader />;
   }
 
   return (
