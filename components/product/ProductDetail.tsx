@@ -13,11 +13,9 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   
   const productName = p.name || p.productName || p['Product Name'] || "Product";
   
-  // প্রফেশনাল ডুয়েল প্রাইস হ্যান্ডলিং (Regular Price & Offer Price)
   const regularPrice = Number(p.regularPrice || p.RegularPrice || p.regular_price || p.regular || 999);
   const offerPrice = Number(p.price || p.offerPrice || p.OfferPrice || p.Price || p.B || 799);
   
-  // ডিসকাউন্টের শতকরা হার (%) হিসাব করা
   const discountPercent = regularPrice > offerPrice ? Math.round(((regularPrice - offerPrice) / regularPrice) * 100) : 0;
 
   const productCategory = p.category || p.Category || p.C || "Couple Item";
@@ -28,7 +26,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     { label: "Design", value: "Heart-Shaped Pendant" }
   ];
 
-  // গুগল শিটের Image URL1 থেকে Image URL4 কলামগুলো থেকে ১০০% নিখুঁতভাবে ছবি সংগ্রহ
   let imageList: string[] = [];
   const columnSources = [
     p['Image URL1'] || p.imageUrl1 || p.image_url1,
@@ -59,7 +56,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
 
-  // বিভাগ, জেলা এবং থানার ডাইনামিক স্টেট
   const divisions = Object.keys(divisionData);
   const [selectedDivision, setSelectedDivision] = useState(divisions[0] || 'ঢাকা');
 
@@ -175,10 +171,8 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
         <span>←</span> হোমপেজে ফিরে যান
       </button>
 
-      {/* Product Image Gallery & Professional Pricing */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 mb-6">
         
-        {/* মেগা অফার ব্যানার */}
         <div className="bg-gradient-to-r from-rose-500 to-orange-500 text-white text-xs font-bold px-3 py-2 rounded-xl mb-4 flex items-center justify-between shadow-sm">
           <span>🔥 সীমিত সময়ের মেগা অফার! ফ্রি গিফট বক্স ও ক্যাশ অন ডেলিভারি</span>
           {discountPercent > 0 && (
@@ -199,7 +193,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           />
         </div>
 
-        {/* Thumbnails */}
         {imageList.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-2">
             {imageList.map((img: string, idx: number) => (
@@ -223,7 +216,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             {productName}
           </h1>
           
-          {/* প্রফেশনাল ডুয়েল প্রাইস ডিসপ্লে (কাটা মূল্য ও অফার মূল্য) */}
           <div className="flex items-center gap-3 mt-2">
             <span className="text-2xl font-black text-orange-600">৳{offerPrice}</span>
             {regularPrice > offerPrice && (
@@ -253,7 +245,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
         </div>
       </div>
 
-      {/* Product Specifications & Details Box */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 mb-6 space-y-4">
         <div className="flex items-center justify-between border-b border-gray-100 pb-3">
           <h3 className="text-xs font-black text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -290,7 +281,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
         </div>
       </div>
 
-      {/* Checkout Form */}
       <div id="one-page-checkout" className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-200 scroll-mt-6">
         <form onSubmit={handleOrderSubmit} className="space-y-6">
 
@@ -347,7 +337,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
                 />
               </div>
 
-              {/* বিভাগ এবং জেলা ড্রপডাউন */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 mb-1">বিভাগ (Division)</label>
@@ -458,7 +447,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             ></textarea>
           </div>
 
-          {/* বিশেষ নির্দেশনা ও মহৎ উদ্যোগ */}
           <div className="bg-amber-50/90 border border-amber-200/80 rounded-2xl p-4 text-xs text-gray-800 space-y-2.5 leading-relaxed shadow-sm">
             <div className="flex items-center gap-2 font-bold text-amber-900 border-b border-amber-200/60 pb-2">
               <span className="text-base">⚠️</span> বিশেষ নির্দেশনা ও মহৎ উদ্যোগ

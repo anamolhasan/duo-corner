@@ -16,7 +16,7 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('/api/products');
+        const res = await fetch('/api/products', { cache: 'no-store' });
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setProducts(data);
@@ -30,7 +30,6 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
     fetchProducts();
   }, []);
 
-  // রিয়েল-টাইম সার্চ ফিল্টারিং লজিক
   const filteredProducts = products.filter(product => {
     const prodName = product.name || (product as any).productName || (product as any)['Product Name'] || "";
     const prodDesc = product.description || (product as any).Description || "";
@@ -56,25 +55,21 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
           const prodId = product.id || index + 1;
           const prodName = product.name || (product as any).productName || (product as any)['Product Name'] || "Product";
           
-          // গুগল শিটের সেল অনুযায়ী সঠিক প্রাইস ও ডিসকাউন্ট ম্যাপিং
           const regularPrice = Number((product as any).regularPrice || (product as any)['Regular Price'] || 999);
           const offerPrice = Number((product as any).offerPrice || (product as any)['Offer Price'] || product.basePrice || (product as any).price || 799);
           const discountPercent = regularPrice > offerPrice ? Math.round(((regularPrice - offerPrice) / regularPrice) * 100) : 0;
 
           const prodCategory = (product as any).category || (product as any)['Category'] || "Couple Item";
           
-          // গুগল শিটের আলাদা আলাদা ইমেজের কলাম থেকে সঠিকভাবে ছবি তোলার লজিক
           let prodImage = "/parl.jpg";
           const colImg = (product as any)['Image URL1'] || (product as any).imageUrl1 || (product as any).image;
           
-          // যদি প্রোডাক্ট অবজেক্টের ভেতরে images অ্যারে থাকে এবং সেখানে ছবি থাকে
           if (Array.isArray(product.images) && product.images.length > 0 && product.images[0]) {
             prodImage = product.images[0];
           } else if (colImg && typeof colImg === 'string' && colImg.trim() !== '') {
             prodImage = /^https?:\/\//i.test(colImg) ? colImg : '/' + colImg.replace(/^\/+/, '');
           }
 
-          // যদি প্রথম প্রোডাক্ট বা দ্বিতীয় প্রোডাক্টের জন্য আলাদা ছবি শিটে দেওয়া থাকে তা নিশ্চিত করা
           if ((product as any)['Image URL1']) {
             let imgVal = String((product as any)['Image URL1']).trim();
             prodImage = imgVal.startsWith('/') ? imgVal : '/' + imgVal;
@@ -83,12 +78,10 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
           return (
             <div key={prodId} className="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden flex flex-col group hover:shadow-md transition-all duration-300">
               
-              {/* ছবির ওপর ক্লিক করলে ডিটেইলস পেজে যাবে */}
               <div 
                 onClick={() => onDetails(product)}
                 className="aspect-square bg-gray-100 relative overflow-hidden cursor-pointer"
               >
-                {/* আই-ক্যাচি ডিসকাউন্ট ব্যাজ */}
                 {discountPercent > 0 && (
                   <span className="absolute top-2.5 left-2.5 z-10 bg-gradient-to-r from-rose-600 to-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-lg shadow-lg tracking-wider animate-pulse">
                     🔥 {discountPercent}% OFF
@@ -110,7 +103,6 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
                     {prodCategory}
                   </span>
                   
-                  {/* প্রোডাক্টের নামের ওপর ক্লিক করলে ডিটেইলস পেজে যাবে */}
                   <h3 
                     onClick={() => onDetails(product)}
                     className="text-xs sm:text-sm font-bold text-gray-800 mt-1.5 line-clamp-2 cursor-pointer hover:text-rose-600 transition"
@@ -120,7 +112,6 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
                 </div>
 
                 <div className="mt-3">
-                  {/* অফার প্রাইস ফোকাস করার জন্য প্রিমিয়াম হাইলাইট বক্স */}
                   <div className="bg-gradient-to-r from-rose-50 to-orange-50 border border-rose-200/60 p-2 rounded-xl mb-3 flex items-center justify-between shadow-xs">
                     <div>
                       <span className="text-[9px] font-black text-rose-600 uppercase tracking-wider block">বিশেষ মূল্য</span>
