@@ -7,20 +7,20 @@ export type Product = {
   id: number;
   name: string;
   shortName: string;
-  basePrice: number;       // বর্তমান অফার প্রাইস (Offer Price)
-  regularPrice?: number;   // রেগুলার প্রাইস (Regular Price)
-  originalPrice: string;   // কাটার জন্য রেগুলার প্রাইসের স্ট্রিং রূপ
+  basePrice: number;       // Offer Price
+  regularPrice?: number;   // Regular Price
+  originalPrice: string;   
   images: string[];
   videoUrl: string;
   badge: string;
   saving: string;
   description: string;
   attributes: ProductAttribute[];
+  [key: string]: any;
 };
 
 export const merchantSpecialNote = "⚠️ বিশেষ নির্দেশনা: প্রিয় গ্রাহক, আপনি জেনেছেন আমাদের লভ্যাংশের টাকা দিয়ে অসহায় দুঃস্থ মানুষদের খাবারের ব্যবস্থা করা হবে, আপনিও আমাদের সেই মহৎ কাজের সঙ্গী হতে চলেছেন 🥀 ❌ বিনা প্রয়োজনে ফেইক অর্ডার করে এক টাকারও ক্ষতি করলে সেটা লভ্যাংশ থেকে কমে যাবে এবং সেই দায় আপনার উপরে থাকবে। ✅ আপনার বিশ্বস্ততার জন্য সম্পূর্ণ ক্যাশ অন ডেলিভারিতে প্রোডাক্টটি পাঠানো হবে! ধন্যবাদ।";
 
-// সরকারি জাতীয় তথ্য বাতায়ন অনুযায়ী ৮ বিভাগ, জেলা এবং সঠিক উপজেলার সম্পূর্ণ তালিকা
 export const divisionData: Record<string, Record<string, string[]>> = {
   "ঢাকা": {
     "ঢাকা": ["ধামরাই", "দোহার", "কেরানীগঞ্জ", "নবাবগঞ্জ", "সাভার", "ঢাকা সদর", "গুলশান", "ধানমন্ডি", "মিরপুর", "উত্তরা"],
@@ -57,7 +57,7 @@ export const divisionData: Record<string, Record<string, string[]>> = {
     "নাটোর": ["বাগাতিপাড়া", "বড়াইগ্রাম", "গুরুদাসপুর", "লালপুর", "নলডাঙ্গা", "নাটোর সদর", "সিংড়া"],
     "চাঁপাইনবাবগঞ্জ": ["ভোলাহাট", "গোমস্তাপুর", "নাচোল", "চাঁপাইনবাবগঞ্জ সদর", "শিবগঞ্জ"],
     "পাবনা": ["আটঘরিয়া", "বেড়া", "ভাঙ্গুড়া", "চাটমোহর", "ফরিদপুর", "ঈশ্বরদী", "পাবনা সদর", "সাঁথিয়া", "সুজানগর"],
-    "রাজশাহী": ["বাঘা", "বাগমারা", "চারঘাট", "দুর্গাপুর", "গোদাগাড়ী", "মোহনপুর", "পবা", "পুঠিয়া", "তানোর"],
+    "রাজশাহী": ["বাঘা", "বাগমara", "চারঘাট", "দুর্গাপুর", "গোদাগাড়ী", "মোহনপুর", "পবা", "পুঠিয়া", "তানোর"],
     "সিরাজগঞ্জ": ["বেলকুচি", "চৌহালি", "কামারখন্দ", "কাজীপুর", "রায়গঞ্জ", "শাহজাদপুর", "সিরাজগঞ্জ সদর", "তাড়াশ", "উল্লাপাড়া"]
   },
   "খুলনা": {
@@ -120,25 +120,48 @@ export const parseImages = (input: any): string[] => {
   return ["/parl.jpg", "/parl1.jpg", "/parl2.jpg", "/parl3.jpg"];
 };
 
-export const products: Product[] = [
-  {
-    id: 1,
-    name: "Love parl Necklace with gift box",
-    shortName: "Love parl Necklace",
-    basePrice: 799,
-    regularPrice: 999,
-    originalPrice: "৳999",
-    images: parseImages("parl.jpg, parl1.jpg, parl2.jpg, parl3.jpg"),
-    videoUrl: "/video.mp4",
-    badge: "🔥 Hot Deal",
-    saving: "Save ৳200",
-    description: "সুন্দর Premium Gift Box Presentation সহ চমৎকার নেকলেস সেট।",
-    attributes: [
-      { label: "Product Type", value: "Pearl Gift Box / Pearl Necklace" },
-      { label: "Design", value: "Heart-Shaped Pendant" }
-    ]
+// সরাসরি গুগল শিট বা এপিআই থেকে লাইভ প্রোডাক্ট ডেটা ফেচ করার ফাংশন
+export async function getProducts(): Promise<Product[]> {
+  try {
+    const res = await fetch('/api/save-order', { cache: 'no-store' });
+    const data = await res.json();
+    
+    if (Array.isArray(data) && data.length > 0) {
+      return data.map((item: any, index: number) => ({
+        id: item.id || index + 1,
+        name: item['Product Name'] || item.productName || item.name || "Product",
+        shortName: item['Product Name'] || item.productName || item.name || "Product",
+        basePrice: Number(item['Offer Price'] || item.price || 799),
+        regularPrice: Number(item['Regular Price'] || item.regularPrice || 999),
+        originalPrice: `৳${item['Regular Price'] || item.regularPrice || 999}`,
+        images: parseImages([
+          item['Image URL1'] || item.imageUrl1,
+          item['Image URL2'] || item.imageUrl2,
+          item['Image URL3'] || item.imageUrl3,
+          item['Image URL4'] || item.imageUrl4
+        ]),
+        videoUrl: item['Video URL'] || item.videoUrl || "/video.mp4",
+        badge: "🔥 Hot Deal",
+        saving: "Save ৳200",
+        description: item['Description'] || item.description || "এক্সক্লুসিভ কাপল প্রোডাক্ট।",
+        attributes: [
+          { label: "Product Type", value: item['Product Type'] || "N/A" },
+          { label: "Design", value: item['Design'] || "N/A" },
+          { label: "Material", value: item['Material'] || "N/A" },
+          { label: "Color", value: item['Color'] || "N/A" },
+          { label: "Size", value: item['Size'] || "N/A" },
+          { label: "Origin", value: item['Origin'] || "N/A" }
+        ]
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return [];
   }
-];
+}
+
+export const products: Product[] = [];
 
 export const taka = (amount: number) => `৳ ${amount}`;
 export const whatsappLink = "https://wa.me/8801777156691";
