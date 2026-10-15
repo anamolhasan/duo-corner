@@ -32,7 +32,7 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
 
   // রিয়েল-টাইম সার্চ ফিল্টারিং লজিক
   const filteredProducts = products.filter(product => {
-    const prodName = product.name || (product as any).productName || (product as any).Name || "";
+    const prodName = product.name || (product as any).productName || (product as any)['Product Name'] || "";
     const prodDesc = product.description || (product as any).Description || "";
     return (
       prodName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,21 +54,30 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
       <div className="grid grid-cols-2 gap-4">
         {filteredProducts.map((product, index) => {
           const prodId = product.id || index + 1;
-          const prodName = product.name || (product as any).productName || (product as any).Name || "Product";
+          const prodName = product.name || (product as any).productName || (product as any)['Product Name'] || "Product";
           
-          // ডুয়েল প্রাইস এবং ডিসকাউন্ট ক্যালকুলেশন
-          const regularPrice = Number((product as any).regularPrice || (product as any).RegularPrice || 999);
-          const offerPrice = Number((product as any).price || (product as any).Price || product.basePrice || (product as any).B || 799);
+          // গুগল শিটের সেল অনুযায়ী সঠিক প্রাইস ও ডিসকাউন্ট ম্যাপিং
+          const regularPrice = Number((product as any).regularPrice || (product as any)['Regular Price'] || 999);
+          const offerPrice = Number((product as any).offerPrice || (product as any)['Offer Price'] || product.basePrice || (product as any).price || 799);
           const discountPercent = regularPrice > offerPrice ? Math.round(((regularPrice - offerPrice) / regularPrice) * 100) : 0;
 
-          const prodCategory = (product as any).category || (product as any).Category || "Couple Item";
+          const prodCategory = (product as any).category || (product as any)['Category'] || "Couple Item";
           
+          // গুগল শিটের আলাদা আলাদা ইমেজের কলাম থেকে সঠিকভাবে ছবি তোলার লজিক
           let prodImage = "/parl.jpg";
           const colImg = (product as any)['Image URL1'] || (product as any).imageUrl1 || (product as any).image;
-          if (colImg && typeof colImg === 'string' && colImg.trim() !== '') {
-            prodImage = /^https?:\/\//i.test(colImg) ? colImg : '/' + colImg.replace(/^\/+/, '');
-          } else if (Array.isArray(product.images) && product.images.length > 0) {
+          
+          // যদি প্রোডাক্ট অবজেক্টের ভেতরে images অ্যারে থাকে এবং সেখানে ছবি থাকে
+          if (Array.isArray(product.images) && product.images.length > 0 && product.images[0]) {
             prodImage = product.images[0];
+          } else if (colImg && typeof colImg === 'string' && colImg.trim() !== '') {
+            prodImage = /^https?:\/\//i.test(colImg) ? colImg : '/' + colImg.replace(/^\/+/, '');
+          }
+
+          // যদি প্রথম প্রোডাক্ট বা দ্বিতীয় প্রোডাক্টের জন্য আলাদা ছবি শিটে দেওয়া থাকে তা নিশ্চিত করা
+          if ((product as any)['Image URL1']) {
+            let imgVal = String((product as any)['Image URL1']).trim();
+            prodImage = imgVal.startsWith('/') ? imgVal : '/' + imgVal;
           }
 
           return (
