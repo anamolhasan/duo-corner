@@ -13,42 +13,65 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   
   const productName = p.name || p.productName || p['Product Name'] || "Product";
   
-  const regularPrice = Number(p.regularPrice || p.RegularPrice || p.regular_price || p.regular || 999);
-  const offerPrice = Number(p.price || p.offerPrice || p.OfferPrice || p.Price || p.B || 799);
+  // গুগল শিট থেকে আসা সঠিক অফার প্রাইস এবং রেগুলার প্রাইস ডাইনামিকলি রিড করা
+  const regularPrice = Number(p.regularPrice || p['Regular Price'] || p.RegularPrice || 999);
+  const offerPrice = Number(p.basePrice || p.price || p['Offer Price'] || p.OfferPrice || 799);
   
   const discountPercent = regularPrice > offerPrice ? Math.round(((regularPrice - offerPrice) / regularPrice) * 100) : 0;
 
-  const productCategory = p.category || p.Category || p.C || "Couple Item";
-  const productDescription = p.description || p.Description || p.E || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
+  const productCategory = p.category || p['Category'] || "Couple Item";
+  const productDescription = p.description || p['Description'] || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
   
-  const productAttributes = p.attributes || [
-    { label: "Product Type", value: "Pearl Gift Box / Pearl Necklace" },
-    { label: "Design", value: "Heart-Shaped Pendant" }
-  ];
-
-  let imageList: string[] = [];
-  const columnSources = [
-    p['Image URL1'] || p.imageUrl1 || p.image_url1,
-    p['Image URL2'] || p.imageUrl2 || p.image_url2,
-    p['Image URL3'] || p.imageUrl3 || p.image_url3,
-    p['Image URL4'] || p.imageUrl4 || p.image_url4,
-  ];
-
-  columnSources.forEach(img => {
-    if (img && typeof img === 'string' && img.trim() !== '') {
-      let clean = img.trim();
-      let formatted = /^https?:\/\//i.test(clean) ? clean : '/' + clean.replace(/^\/+/, '');
-      if (!imageList.includes(formatted)) {
-        imageList.push(formatted);
-      }
+  // গুগল শিট বা প্রোডাক্ট অবজেক্ট থেকে ডাইনামিক স্পেসিফিকেশন বা অ্যাট্রিবিউট সংগ্রহ
+  let productAttributes = p.attributes || [];
+  if (typeof productAttributes === 'string') {
+    try {
+      productAttributes = JSON.parse(productAttributes);
+    } catch {
+      productAttributes = [];
     }
-  });
-
-  if (imageList.length === 0) {
-    imageList = ["/parl.jpg", "/parl1.jpg", "/parl2.jpg", "/parl3.jpg"];
   }
 
-  const productVideo = p.videoUrl || p.video || p.Video || "/video.mp4";
+  // যদি শিটে আলাদা অ্যাট্রিবিউট না থাকে, তবে ডিফল্ট ক্যাটাগরি ও স্টক দেখাবে
+  if (!Array.isArray(productAttributes) || productAttributes.length === 0) {
+    productAttributes = [
+      { label: "Category", value: productCategory },
+      { label: "Stock", value: String(p.stock || p['Stock'] || "Available") }
+    ];
+  }
+
+  // গুগল শিটের Image URL1 থেকে Image URL4 কলামগুলো থেকে ১০০% নিখুঁতভাবে ছবি সংগ্রহ
+  let imageList: string[] = [];
+  if (Array.isArray(p.images) && p.images.length > 0) {
+    imageList = p.images;
+  } else {
+    const columnSources = [
+      p['Image URL1'] || p.imageUrl1,
+      p['Image URL2'] || p.imageUrl2,
+      p['Image URL3'] || p.imageUrl3,
+      p['Image URL4'] || p.imageUrl4,
+    ];
+
+    columnSources.forEach(img => {
+      if (img && typeof img === 'string' && img.trim() !== '') {
+        let clean = img.trim();
+        let formatted = /^https?:\/\//i.test(clean) ? clean : '/' + clean.replace(/^\/+/, '');
+        if (!imageList.includes(formatted)) {
+          imageList.push(formatted);
+        }
+      }
+    });
+  }
+
+  if (imageList.length === 0) {
+    imageList = ["/parl.jpg"];
+  }
+
+  // গুগল শিট থেকে নির্দিষ্ট প্রোডাক্টের ভিডিও ইউআরএল ডাইনামিকলি নেওয়া
+  let productVideo = p.videoUrl || p['Video URL'] || p.video || "/video.mp4";
+  if (productVideo && !productVideo.startsWith('http') && !productVideo.startsWith('/')) {
+    productVideo = '/' + productVideo;
+  }
 
   const [selectedImage, setSelectedImage] = useState(imageList[0] || "/parl.jpg");
   const [quantity, setQuantity] = useState(1);
@@ -274,7 +297,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Product Video Review (ভিডিও রিভিউ)
           </h3>
           <div className="rounded-xl overflow-hidden bg-black border border-gray-200 aspect-video flex items-center justify-center">
-            <video src={productVideo} controls autoPlay muted loop className="w-full h-full object-cover">
+            <video src={productVideo} controls autoPlay muted loop className="w-full h-full object-cover" key={productVideo}>
               আপনার ব্রাউজার ভিডিও ট্যাগ সাপোর্ট করে না।
             </video>
           </div>
