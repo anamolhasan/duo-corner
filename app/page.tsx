@@ -1,5 +1,9 @@
 'use client';
 import { useState } from 'react';
+import Header from '@/components/landing/Header';
+import Hero from '@/components/landing/Hero';
+import TrustStrip from '@/components/landing/TrustStrip';
+import Footer from '@/components/landing/Footer';
 import ProductGrid from '@/components/landing/ProductGrid';
 import ProductDetail from '@/components/product/ProductDetail';
 import type { Product } from '@/lib/data';
@@ -16,26 +20,53 @@ export default function Home() {
 
   const handleBackToHome = () => {
     setSelectedProduct(null);
+    setSearchQuery('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 relative">
-      {selectedProduct ? (
-        <ProductDetail 
-          product={selectedProduct} 
-          onBack={handleBackToHome} 
-        />
-      ) : (
-        <div>
-          {/* আপনার অরিজিনাল হেডার, ব্যানার ও অন্যান্য ডিজাইন এখানে অপরিবর্তিত থাকবে */}
-          <ProductGrid 
-            onDetails={handleDetails} 
-            onOrder={(product) => handleDetails(product)} 
-            searchQuery={searchQuery} 
-          />
-        </div>
-      )}
+    <main className="min-h-screen bg-[#0a0a0a] text-white relative selection:bg-[#D4AF37] selection:text-black font-sans">
+      
+      {/* ১. স্মার্ট ও প্রিমিয়াম হেডার (হোম এবং ক্যাটাগরি ফিল্টার সহ) */}
+      <Header 
+        onHome={handleBackToHome} 
+        searchQuery={searchQuery} 
+        setSearchQuery={setSearchQuery} 
+        onCategorySelect={(cat) => {
+          setSearchQuery(cat);
+          setSelectedProduct(null);
+        }}
+      />
+
+      {/* ২. মূল কন্টেন্ট ও প্রোডাক্ট সেকশন */}
+      <div id="products-section">
+        {selectedProduct ? (
+          <div className="py-6">
+            <ProductDetail 
+              product={selectedProduct} 
+              onBack={handleBackToHome} 
+            />
+          </div>
+        ) : (
+          <div>
+            {/* ৩:১ ওয়াইড সিনেম্যাটিক হিরো ব্যানার */}
+            <Hero onHome={handleBackToHome} />
+
+            {/* প্রোডাক্ট গ্রিড, সার্চ ও সরি প্লেকার্ড অ্যানিমেশন সহ */}
+            <ProductGrid 
+              onDetails={handleDetails} 
+              onOrder={(product) => handleDetails(product)} 
+              searchQuery={searchQuery} 
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ৩. ট্রাস্ট স্ট্রিপ */}
+      <TrustStrip />
+
+      {/* ৪. প্রিমিয়াম ব্ল্যাক অ্যান্ড গোল্ড ফুটার */}
+      <Footer />
 
       {/* হোয়াটসঅ্যাপ ফ্লোটিং আইকন ও অরিজিনাল ডেকোরেশন */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
@@ -43,7 +74,7 @@ export default function Home() {
           href={whatsappChatLink} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="w-12 h-12 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 cursor-pointer"
+          className="w-12 h-12 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 cursor-pointer"
           title="WhatsApp Chat"
         >
           <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
@@ -51,6 +82,7 @@ export default function Home() {
           </svg>
         </a>
       </div>
+
     </main>
   );
 }

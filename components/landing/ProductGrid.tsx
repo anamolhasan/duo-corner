@@ -8,12 +8,15 @@ type ProductGridProps = {
   onDetails: (product: Product) => void;
   onOrder: (product: Product) => void;
   searchQuery?: string;
+  selectedCategory?: string;
 };
 
-export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: ProductGridProps) {
+export default function ProductGrid({ onDetails, onOrder, searchQuery = '', selectedCategory = '' }: ProductGridProps) {
   const [products, setProducts] = useState<Product[]>(localProducts);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
 
+  // প্রথমবার পেজ লোড হওয়ার ডেটা ফেচিং
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -25,30 +28,59 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
       } catch (error) {
         console.error("প্রোডাক্ট লোড করতে সমস্যা হয়েছে");
       } finally {
-        setLoading(false);
+        setInitialLoading(false);
       }
     };
     fetchProducts();
   }, []);
 
+  // সার্চ করার সময় আপনার সেই চমৎকার রোমান্টিক লোডার ইফেক্ট ট্রিগার করা
+  useEffect(() => {
+    if (searchQuery.trim() !== '') {
+      setIsSearching(true);
+      const timer = setTimeout(() => {
+        setIsSearching(false);
+      }, 700); // ৭০০ মিলিসেকেন্ডের স্মুথ লোডিং ডিলে
+      return () => clearTimeout(timer);
+    } else {
+      setIsSearching(false);
+    }
+  }, [searchQuery]);
+
+  // সার্চ এবং ক্যাটাগরি ফিল্টারিং লজিক
   const filteredProducts = products.filter(product => {
     const prodName = product.name || (product as any).productName || (product as any)['Product Name'] || "";
     const prodDesc = product.description || (product as any).Description || "";
-    return (
+    const prodCat = (product as any).category || (product as any)['Category'] || "";
+
+    const matchesSearch = 
       prodName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prodDesc.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+      prodDesc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prodCat.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory = selectedCategory 
+      ? prodCat.toLowerCase().includes(selectedCategory.toLowerCase())
+      : true;
+
+    return matchesSearch && matchesCategory;
   });
 
-  // গ্লোবাল রোমান্টিক কাপল ডান্স লোডার
-  if (loading) {
+  // ১. আপনার সেই আসল গ্লোবাল রোমান্টিক কাপল ডান্স লোডার (পেজ বা সার্চ লোডিংয়ের সময় শো করবে)
+  if (initialLoading || isSearching) {
     return <Loader />;
   }
 
   return (
-    <section className="px-4 py-6">
-      <h2 className="text-xl font-black text-gray-800 mb-4">আমাদের এক্সক্লুসিভ কালেকশন</h2>
-      <div className="grid grid-cols-2 gap-4">
+    <section className="px-4 py-6 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg sm:text-xl font-black text-gray-800">
+          {selectedCategory ? `${selectedCategory} কালেকশন` : 'আমাদের এক্সক্লুসিভ কালেকশন'}
+        </h2>
+        <span className="text-xs text-gray-500 font-semibold">মোট ({filteredProducts.length}) টি পণ্য</span>
+      </div>
+
+      {/* ২. প্রোডাক্ট গ্রিড ডিসপ্লে */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredProducts.map((product, index) => {
           const prodId = product.id || index + 1;
           const prodName = product.name || (product as any).productName || (product as any)['Product Name'] || "Product";
@@ -148,9 +180,37 @@ export default function ProductGrid({ onDetails, onOrder, searchQuery = '' }: Pr
         })}
       </div>
 
+      {/* ৩. যদি সার্চ বা ক্যাটাগরিতে কোনো পণ্য না পাওয়া যায়: ভিডিও স্টাইল সরি প্লেকার্ড অ্যানিমেশন */}
       {filteredProducts.length === 0 && (
-        <div className="text-center py-10 text-gray-500 text-sm">
-          দুঃখিত! আপনার সার্চ করা নামটি দিয়ে কোনো পণ্য পাওয়া যায়নি।
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 py-16 space-y-6">
+          <div className="relative w-full max-w-sm aspect-video rounded-3xl overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-black border border-[#D4AF37]/40 shadow-2xl flex flex-col items-center justify-center p-6">
+            
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              playsInline 
+              className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay pointer-events-none"
+            >
+              <source src="/couple-sorry.mp4" type="video/mp4" />
+            </video>
+
+            <div className="relative z-10 flex flex-col items-center space-y-3">
+              <span className="text-3xl animate-bounce">👩‍❤️‍👨</span>
+              <div className="bg-gradient-to-r from-rose-600 to-orange-500 text-white text-[11px] font-black px-4 py-1 rounded-full shadow-lg tracking-wider uppercase animate-pulse">
+                Sorry 😞
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 max-w-md">
+            <h3 className="text-base sm:text-lg font-black text-gray-800 tracking-wide">
+              এমন ফলাফল পাওয়া যায়নি
+            </h3>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              আপনার সার্চ করা নাম বা কিওয়ার্ড দিয়ে আমাদের স্টোরে এই মুহূর্তে কোনো পণ্য পাওয়া যায়নি। অনুগ্রহ করে সঠিক বানানে বা অন্য কিছু দিয়ে আবার সার্চ করুন।
+            </p>
+          </div>
         </div>
       )}
     </section>
