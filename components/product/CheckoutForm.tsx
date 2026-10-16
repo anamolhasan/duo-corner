@@ -113,11 +113,14 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           amount: total
         })
       });
-      // গুগল শিটে রিকোয়েস্ট সফলভাবে যাওয়ার সাথে সাথেই সাকসেস অ্যানিমেশন দেখাবে
+      
+      // অর্ডার সফল হওয়ার পর সাকসেস স্টেট সেট করা এবং স্ক্রিন স্মুথলি একদম উপরে নিয়ে যাওয়া
       setOrderSuccess(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
-      // নেটওয়ার্ক বা অন্য কোনো কারণে রিকোয়েস্ট আটকানোর পরেও যাতে কাস্টমার ফেইক এরর না দেখে, তাই সাকসেস দেখাবে
+      // নেটওয়ার্ক ফেইল করলেও সাকসেস দেখাবে এবং স্ক্রিন উপরে নিয়ে যাবে
       setOrderSuccess(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -143,7 +146,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           </h2>
           
           <p className="text-gray-300 text-xs mb-6 leading-relaxed">
-            প্রিয় <span className="text-[#D4AF37] font-bold">{fullName}</span>, আপনার অর্ডারটি সফলভাবে আমাদের সিস্টেমে এবং গুগল শিটে রেকর্ড করা হয়েছে। খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে কল করে কনফার্ম করবেন।
+            প্রিয় <span className="text-[#D4AF37] font-bold">{fullName}</span>, আপনার অর্ডারটি সফলভাবে আমাদের সিস্টেমে  রেকর্ড করা হয়েছে । খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে কল করে কনফার্ম করবেন।
           </p>
 
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 text-left space-y-2 text-xs">
