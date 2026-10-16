@@ -27,7 +27,8 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const payload = {
-      action: 'add_product',
+      action: body.action || 'add_product', // add_product, update_product অথবা delete_product
+      id: body.id || '',
       productName: body.productName || body.name || '',
       category: body.category || '',
       price: body.price || 0,
@@ -50,19 +51,21 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
-      throw new Error('Google Sheet-এ প্রোডাক্ট পাঠানো যায়নি।');
+      throw new Error('Google Sheet-এ ডেটা পাঠানো যায়নি।');
     }
 
+    const result = await response.json().catch(() => ({ success: true }));
     return NextResponse.json({
       success: true,
-      message: 'Product added successfully',
+      message: 'Operation successful',
+      result
     });
   } catch (error) {
     console.error('Products API POST error:', error);
     return NextResponse.json(
       {
         success: false,
-        message: 'Product সংরক্ষণ করা যায়নি।',
+        message: 'ডেটা সংরক্ষণ করা যায়নি।',
       },
       { status: 500 }
     );
