@@ -13,65 +13,32 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   
   const productName = p.name || p.productName || p['Product Name'] || "Product";
   
-  const regularPrice = Number(p.regularPrice || p['Regular Price'] || p.RegularPrice || 999);
-  const offerPrice = Number(p.basePrice || p.price || p['Offer Price'] || p.OfferPrice || 799);
-  
-  const discountPercent = regularPrice > offerPrice ? Math.round(((regularPrice - offerPrice) / regularPrice) * 100) : 0;
+  const productPrice = Number(p.basePrice || p.price || p.Price || p.B || 799);
+  const regularPrice = Number(p.regularPrice || p.regular_price || 0);
+  const discountAmount = regularPrice > productPrice ? regularPrice - productPrice : 0;
 
-  const productCategory = p.category || p['Category'] || "Couple Item";
-  const productDescription = p.description || p['Description'] || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
+  const productCategory = p.category || p.Category || p.C || "Couple Item";
+  const productDescription = p.description || p.Description || p.E || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
   
-  let productAttributes = p.attributes || [];
-  if (typeof productAttributes === 'string') {
-    try {
-      productAttributes = JSON.parse(productAttributes);
-    } catch {
-      productAttributes = [];
-    }
-  }
-
-  if (!Array.isArray(productAttributes) || productAttributes.length === 0) {
-    productAttributes = [
-      { label: "Category", value: productCategory },
-      { label: "Stock", value: String(p.stock || p['Stock'] || "Available") }
-    ];
-  }
+  const productAttributes = p.attributes || [
+    { label: "Product Type", value: "Pearl Gift Box / Pearl Necklace" },
+    { label: "Design", value: "Heart-Shaped Pendant" }
+  ];
 
   let imageList: string[] = [];
   if (Array.isArray(p.images) && p.images.length > 0) {
-    imageList = p.images;
+    imageList = p.images.map((img: string) => (img.startsWith('/') ? img : '/' + img));
   } else {
-    const columnSources = [
-      p['Image URL1'] || p.imageUrl1,
-      p['Image URL2'] || p.imageUrl2,
-      p['Image URL3'] || p.imageUrl3,
-      p['Image URL4'] || p.imageUrl4,
-    ];
-
-    columnSources.forEach(img => {
-      if (img && typeof img === 'string' && img.trim() !== '') {
-        let clean = img.trim();
-        let formatted = /^https?:\/\//i.test(clean) ? clean : '/' + clean.replace(/^\/+/, '');
-        if (!imageList.includes(formatted)) {
-          imageList.push(formatted);
-        }
-      }
-    });
+    imageList = ["/parl.jpg", "/parl1.jpg", "/parl2.jpg", "/parl3.jpg"];
   }
 
-  if (imageList.length === 0) {
-    imageList = ["/parl.jpg"];
-  }
-
-  let productVideo = p.videoUrl || p['Video URL'] || p.video || "/video.mp4";
-  if (productVideo && !productVideo.startsWith('http') && !productVideo.startsWith('/')) {
-    productVideo = '/' + productVideo;
-  }
+  const productVideo = p.videoUrl || p.video || p.Video || "/video.mp4";
 
   const [selectedImage, setSelectedImage] = useState(imageList[0] || "/parl.jpg");
   const [quantity, setQuantity] = useState(1);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
 
   const divisions = Object.keys(divisionData);
@@ -109,7 +76,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   };
 
   const deliveryCharge = selectedDivision === 'ঢাকা' ? 70 : 130; 
-  const subtotal = offerPrice * quantity;
+  const subtotal = productPrice * quantity;
   const total = subtotal + deliveryCharge;
 
   const scrollToCheckout = () => {
@@ -119,7 +86,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     }
   };
 
- const handleOrderSubmit = async (e: React.FormEvent) => {
+  const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone || !address) {
       alert("দয়া করে নাম, ফোন নম্বর এবং ঠিকানা পূরণ করুন!");
@@ -132,7 +99,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
 
     setLoading(true);
     try {
-      const res = await fetch('/api/save-order', {
+      await fetch('/api/save-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -147,35 +114,25 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
         })
       });
       
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { status: 'success' }; // যদি টেক্সট রেসপন্স আসে তবুও সাকসেস ধরবে
-      }
-      
-      // নেটওয়ার্ক বা এপিআই যাই হোক না কেন, অর্ডার সফলভাবে সাবমিট হলে সাকসেস স্ক্রিন দেখাবে
+      // অর্ডার সফল হওয়ার পর সাকসেস স্টেট সেট করা এবং স্ক্রিন স্মুথলি একদম উপরে নিয়ে যাওয়া
       setOrderSuccess(true);
-    } catch (error) {
-      // নেটওয়ার্ক বা DNS এরর (ERR_NAME_NOT_RESOLVED) হলেও যেহেতু শিটে ডাটা পৌঁছে যায়, 
-      // তাই কাস্টমারকে আর ফেইক এরর না দেখিয়ে সরাসরি থ্যাংক ইউ অ্যানিমেশন দেখাবে!
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      // নেটওয়ার্ক ফেইল করলেও সাকসেস দেখাবে এবং স্ক্রিন উপরে নিয়ে যাবে
       setOrderSuccess(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
   };
 
-  // প্রিমিয়াম থ্যাংক ইউ অ্যানিমেশন স্ক্রিন
   if (orderSuccess) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4 animate-fade-in">
-        <div className="bg-gradient-to-b from-slate-900 to-black rounded-3xl p-8 shadow-2xl border border-[#D4AF37]/40 max-w-md w-full text-center relative overflow-hidden">
+      <div className="min-h-[80vh] flex items-center justify-center px-4 font-sans">
+        <div className="bg-gradient-to-b from-slate-900 to-black rounded-3xl p-8 shadow-2xl border border-[#D4AF37]/40 max-w-md w-full text-center relative overflow-hidden animate-fade-in">
           
-          {/* ব্যাকগ্রাউন্ড গ্লো ইফেক্ট */}
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#D4AF37]/20 rounded-full blur-3xl pointer-events-none"></div>
           
-          {/* অ্যানিমেটেড চেকমার্ক সার্কেল */}
           <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 to-[#D4AF37] text-black rounded-full flex items-center justify-center text-4xl mx-auto mb-5 shadow-[0_0_30px_rgba(212,175,55,0.5)] animate-bounce">
             ✓
           </div>
@@ -189,7 +146,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           </h2>
           
           <p className="text-gray-300 text-xs mb-6 leading-relaxed">
-            প্রিয় <span className="text-[#D4AF37] font-bold">{fullName}</span>, আপনার অর্ডারটি সফলভাবে আমাদের সিস্টেমে  রেকর্ড করা হয়েছে । খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে কল করে কনফার্ম করবেন।
+            প্রিয় <span className="text-[#D4AF37] font-bold">{fullName}</span>, আপনার অর্ডারটি সফলভাবে আমাদের রেকর্ড করা হয়েছে। খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে কল করে কনফার্ম করবেন।
           </p>
 
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 text-left space-y-2 text-xs">
@@ -227,18 +184,9 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
         <span>←</span> হোমপেজে ফিরে যান
       </button>
 
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 mb-6">
-        
-        <div className="bg-gradient-to-r from-rose-500 to-orange-500 text-white text-xs font-bold px-3 py-2 rounded-xl mb-4 flex items-center justify-between shadow-sm">
-          <span>🔥 সীমিত সময়ের মেগা অফার! ফ্রি গিফট বক্স ও ক্যাশ অন ডেলিভারি</span>
-          {discountPercent > 0 && (
-            <span className="bg-white text-rose-600 px-2 py-0.5 rounded-lg text-[11px] font-black">
-              SAVE {discountPercent}%
-            </span>
-          )}
-        </div>
-
-        <div className="w-full h-72 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 mb-3 relative">
+      {/* Product Image Gallery */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6">
+        <div className="w-full h-72 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 mb-3">
           <img 
             src={selectedImage} 
             alt={productName} 
@@ -272,15 +220,15 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             {productName}
           </h1>
           
-          <div className="flex items-center gap-3 mt-2">
-            <span className="text-2xl font-black text-orange-600">৳{offerPrice}</span>
-            {regularPrice > offerPrice && (
-              <span className="text-sm font-bold text-gray-400 line-through">৳{regularPrice}</span>
-            )}
-            {discountPercent > 0 && (
-              <span className="bg-rose-100 text-rose-600 text-xs font-black px-2 py-0.5 rounded-full">
-                {discountPercent}% OFF
-              </span>
+          <div className="mt-2 flex items-center gap-3">
+            <span className="text-2xl font-black text-rose-600">৳{productPrice}</span>
+            {regularPrice > productPrice && (
+              <>
+                <span className="text-sm font-bold text-gray-400 line-through">৳{regularPrice}</span>
+                <span className="bg-rose-100 text-rose-600 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  Save ৳{discountAmount}
+                </span>
+              </>
             )}
           </div>
         </div>
@@ -301,6 +249,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
         </div>
       </div>
 
+      {/* Product Specifications & Details Box */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 mb-6 space-y-4">
         <div className="flex items-center justify-between border-b border-gray-100 pb-3">
           <h3 className="text-xs font-black text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -311,10 +260,12 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
 
         <div className="divide-y divide-gray-50 text-xs">
           {productAttributes.map((attr: { label: string; value: string }, idx: number) => (
-            <div key={idx} className="py-2.5 grid grid-cols-3 gap-4 items-center">
-              <span className="font-medium text-gray-500">{attr.label}</span>
-              <span className="col-span-2 font-semibold text-gray-800">{attr.value}</span>
-            </div>
+            attr.label && attr.value ? (
+              <div key={idx} className="py-2.5 grid grid-cols-3 gap-4 items-center">
+                <span className="font-medium text-gray-500">{attr.label}</span>
+                <span className="col-span-2 font-semibold text-gray-800">{attr.value}</span>
+              </div>
+            ) : null
           ))}
         </div>
 
@@ -330,13 +281,14 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             <span className="w-1.5 h-4 bg-[#f8931f] rounded-full"></span> Product Video Review (ভিডিও রিভিউ)
           </h3>
           <div className="rounded-xl overflow-hidden bg-black border border-gray-200 aspect-video flex items-center justify-center">
-            <video src={productVideo} controls autoPlay muted loop className="w-full h-full object-cover" key={productVideo}>
+            <video src={productVideo} controls autoPlay muted loop className="w-full h-full object-cover">
               আপনার ব্রাউজার ভিডিও ট্যাগ সাপোর্ট করে না।
             </video>
           </div>
         </div>
       </div>
 
+      {/* Checkout Form */}
       <div id="one-page-checkout" className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-200 scroll-mt-6">
         <form onSubmit={handleOrderSubmit} className="space-y-6">
 
@@ -349,12 +301,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
                 <img src={selectedImage} alt="" className="w-12 h-12 rounded-lg object-cover border" />
                 <div>
                   <h4 className="text-xs font-bold text-gray-800 line-clamp-1">{productName}</h4>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs font-black text-orange-600">৳{offerPrice * quantity}</span>
-                    {regularPrice > offerPrice && (
-                      <span className="text-[10px] text-gray-400 line-through">৳{regularPrice * quantity}</span>
-                    )}
-                  </div>
+                  <p className="text-xs font-black text-gray-900 mt-0.5">৳{productPrice * quantity}</p>
                 </div>
               </div>
 
@@ -393,6 +340,23 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
                 />
               </div>
 
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@gmail.com (Optional)" 
+                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
+              />
+
+              <input 
+                type="text" 
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="ex: House no. / building / street / area" 
+                required
+                className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
+              />
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 mb-1">বিভাগ (Division)</label>
@@ -429,15 +393,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
               </div>
             </div>
           </div>
-          
-          <input 
-            type="text" 
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="ex: House no. / building / street / area" 
-            required
-            className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#f8931f]" 
-          />
 
           <div>
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -498,7 +453,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
               rows={2}
               value={specialNote}
               onChange={(e) => setSpecialNote(e.target.value)}
-              placeholder="Note."
+              placeholder="কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."
               className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs focus:outline-none focus:border-[#f8931f] resize-none"
             ></textarea>
           </div>
@@ -536,7 +491,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             disabled={loading}
             className="w-full bg-[#f8931f] hover:bg-[#e08219] text-white font-bold py-4 rounded-xl shadow-md transition cursor-pointer text-sm"
           >
-            {loading ? 'প্রসেসিং হচ্ছে...' : `Submit Order (${total}.00 BDT)`}
+            {loading ? 'প্রসেসিং হচ্ছে...' : `অর্ডার কনফার্ম করুন (${total}.00 BDT)`}
           </button>
         </form>
       </div>
