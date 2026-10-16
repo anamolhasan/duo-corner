@@ -13,7 +13,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   
   const productName = p.name || p.productName || p['Product Name'] || "Product";
   
-  // গুগল শিট থেকে আসা সঠিক অফার প্রাইস এবং রেগুলার প্রাইস ডাইনামিকলি রিড করা
   const regularPrice = Number(p.regularPrice || p['Regular Price'] || p.RegularPrice || 999);
   const offerPrice = Number(p.basePrice || p.price || p['Offer Price'] || p.OfferPrice || 799);
   
@@ -22,7 +21,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const productCategory = p.category || p['Category'] || "Couple Item";
   const productDescription = p.description || p['Description'] || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
   
-  // গুগল শিট বা প্রোডাক্ট অবজেক্ট থেকে ডাইনামিক স্পেসিফিকেশন বা অ্যাট্রিবিউট সংগ্রহ
   let productAttributes = p.attributes || [];
   if (typeof productAttributes === 'string') {
     try {
@@ -32,7 +30,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     }
   }
 
-  // যদি শিটে আলাদা অ্যাট্রিবিউট না থাকে, তবে ডিফল্ট ক্যাটাগরি ও স্টক দেখাবে
   if (!Array.isArray(productAttributes) || productAttributes.length === 0) {
     productAttributes = [
       { label: "Category", value: productCategory },
@@ -40,7 +37,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     ];
   }
 
-  // গুগল শিটের Image URL1 থেকে Image URL4 কলামগুলো থেকে ১০০% নিখুঁতভাবে ছবি সংগ্রহ
   let imageList: string[] = [];
   if (Array.isArray(p.images) && p.images.length > 0) {
     imageList = p.images;
@@ -67,7 +63,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     imageList = ["/parl.jpg"];
   }
 
-  // গুগল শিট থেকে নির্দিষ্ট প্রোডাক্টের ভিডিও ইউআরএল ডাইনামিকলি নেওয়া
   let productVideo = p.videoUrl || p['Video URL'] || p.video || "/video.mp4";
   if (productVideo && !productVideo.startsWith('http') && !productVideo.startsWith('/')) {
     productVideo = '/' + productVideo;
@@ -152,7 +147,9 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
         })
       });
       const data = await res.json();
-      if (data.success) {
+      
+      // এখানে রেসপন্স সফলভাবে হ্যান্ডেল করা হয়েছে (success বা status === 'success')
+      if (data.success || data.status === 'success') {
         setOrderSuccess(true);
       } else {
         alert("অর্ডার করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
@@ -163,22 +160,52 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     setLoading(false);
   };
 
+  // প্রিমিয়াম থ্যাংক ইউ অ্যানিমেশন স্ক্রিন
   if (orderSuccess) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl p-8 shadow-xl border border-orange-100 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
-            🎉
+      <div className="min-h-[80vh] flex items-center justify-center px-4 animate-fade-in">
+        <div className="bg-gradient-to-b from-slate-900 to-black rounded-3xl p-8 shadow-2xl border border-[#D4AF37]/40 max-w-md w-full text-center relative overflow-hidden">
+          
+          {/* ব্যাকগ্রাউন্ড গ্লো ইফেক্ট */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#D4AF37]/20 rounded-full blur-3xl pointer-events-none"></div>
+          
+          {/* অ্যানিমেটেড চেকমার্ক সার্কেল */}
+          <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 to-[#D4AF37] text-black rounded-full flex items-center justify-center text-4xl mx-auto mb-5 shadow-[0_0_30px_rgba(212,175,55,0.5)] animate-bounce">
+            ✓
           </div>
-          <h2 className="text-2xl font-black text-gray-900 mb-2">অর্ডার সফলভাবে সম্পন্ন হয়েছে!</h2>
-          <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-            আপনার অর্ডারটি কনফার্ম করতে খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে যোগাযোগ করবেন।
+
+          <span className="text-[10px] uppercase tracking-[0.25em] text-[#D4AF37] font-black bg-[#D4AF37]/10 px-3 py-1 rounded-full border border-[#D4AF37]/30">
+            DUO CORNER EXCLUSIVE
+          </span>
+
+          <h2 className="text-2xl font-black text-white mt-4 mb-2 tracking-wide">
+            অর্ডার সফলভাবে সম্পন্ন হয়েছে! 🥀
+          </h2>
+          
+          <p className="text-gray-300 text-xs mb-6 leading-relaxed">
+            প্রিয় <span className="text-[#D4AF37] font-bold">{fullName}</span>, আপনার অর্ডারটি সফলভাবে আমাদের সিস্টেমে এবং গুগল শিটে রেকর্ড করা হয়েছে। খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে কল করে কনফার্ম করবেন।
           </p>
+
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 text-left space-y-2 text-xs">
+            <div className="flex justify-between text-gray-400">
+              <span>প্রোডাক্ট:</span>
+              <span className="text-white font-semibold truncate max-w-[180px]">{productName}</span>
+            </div>
+            <div className="flex justify-between text-gray-400">
+              <span>মোট পরিমাণ:</span>
+              <span className="text-[#D4AF37] font-black">৳{total} BDT</span>
+            </div>
+            <div className="flex justify-between text-gray-400">
+              <span>পেমেন্ট পদ্ধতি:</span>
+              <span className="text-white font-semibold">Cash On Delivery</span>
+            </div>
+          </div>
+
           <button 
             onClick={onBack}
-            className="w-full bg-[#f8931f] hover:bg-[#e08219] text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all cursor-pointer"
+            className="w-full bg-gradient-to-r from-[#D4AF37] to-amber-500 hover:from-amber-500 hover:to-[#D4AF37] text-black font-black py-3.5 px-6 rounded-xl shadow-lg transition-all cursor-pointer text-xs uppercase tracking-wider"
           >
-            আরও কেনাকাটা করুন
+            হোমপেজে ফিরে যান
           </button>
         </div>
       </div>
