@@ -3,27 +3,23 @@ import { useState, useEffect } from 'react';
 import { useUser, useClerk, SignIn } from '@clerk/nextjs';
 
 type Order = {
-  id?: string | number;
   Timestamp?: string;
-  name?: string;
   Name?: string;
-  phone?: string;
+  name?: string;
   Phone?: string;
+  phone?: string;
+  Address?: string;
+  address?: string;
+  'Product/Note'?: string;
   productName?: string;
   note?: string;
-  'Product/Note'?: string;
-  quantity?: number;
-  address?: string;
-  Address?: string;
-  thana?: string;
-  district?: string;
-  division?: string;
-  totalPrice?: number;
-  amount?: number;
   Amount?: number;
-  status?: string;
+  amount?: number;
+  totalPrice?: number;
   Status?: string;
-  paymentMethod?: string;
+  status?: string;
+  'Tracking ID'?: string;
+  [key: string]: any;
 };
 
 export default function AdminDashboard() {
@@ -36,7 +32,6 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'inventory' | 'finance' | 'impact' | 'upload' | 'categories'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // নতুন প্রোডাক্ট স্টেট (ডুয়েল প্রাইস: Regular & Offer Price, আলাদা ৪টি ছবি, ভিডিও ও ৬টি স্পেসিফিকেশনসহ)
   const [newProduct, setNewProduct] = useState({
     productName: '',
     category: 'ব্রেসলেট (Bracelet)',
@@ -48,7 +43,7 @@ export default function AdminDashboard() {
     imageUrl2: 'parl1.jpg',
     imageUrl3: 'parl2.jpg',
     imageUrl4: 'parl3.jpg',
-    videoUrl: '',
+    videoUrl: '/video.mp4',
     specs: [
       { label: 'Product Type', value: '' },
       { label: 'Design', value: '' },
@@ -86,18 +81,16 @@ export default function AdminDashboard() {
     return () => { active = false; };
   }, []);
 
-  const handleStatusChange = async (orderId: string | number, newStatus: string) => {
-    alert(`অর্ডার ${orderId} এর স্ট্যাটাস "${newStatus}" করা হয়েছে!`);
-    setOrders(orders.map(order => 
-      (order.id === orderId || `ORD-${orders.indexOf(order) + 1}` === orderId) 
-        ? { ...order, status: newStatus, Status: newStatus } 
-        : order
-    ));
-  };
-
   const sendToSteadfast = async (order: Order, index: number) => {
-    if (!confirm('আপনি কি নিশ্চিতভাবে এই অর্ডারটি Steadfast কুরিয়ারে পাঠাতে চান?')) return;
-    const orderId = order.id || `ORD-${index + 1}`;
+    const customerName = order.Name || order.name || "Unknown";
+    const customerPhone = order.Phone || order.phone || "";
+    const customerAddress = order.Address || order.address || "";
+    const totalAmount = Number(order.Amount || order.amount || order.totalPrice || 0);
+    const productName = order['Product/Note'] || order.productName || order.note || "Product";
+    const orderId = `ORD-${index + 1}`;
+
+    if (!confirm(`আপনি কি নিশ্চিতভাবে "${customerName}" এর অর্ডারটি Steadfast কুরিয়ারে পাঠাতে চান?`)) return;
+    
     setActionLoading(orderId);
     try {
       const res = await fetch('/api/save-order', {
@@ -105,18 +98,17 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: orderId,
-          name: order.name || order.Name || "Unknown",
-          phone: order.phone || order.Phone || "",
-          address: order.address || order.Address || "",
-          thana: order.thana || "",
-          district: order.district || "",
-          totalPrice: order.totalPrice || order.amount || order.Amount || 0,
-          productName: order.productName || order.note || order['Product/Note'] || "Product"
+          name: customerName,
+          phone: customerPhone,
+          address: customerAddress,
+          totalPrice: totalAmount,
+          productName: productName
         }),
       });
       const data = await res.json();
       if (data.success) {
         alert(`✅ সফল! কনসাইনমেন্ট আইডি: ${data.consignmentId}`);
+        refreshOrders();
       } else {
         alert(`❌ ব্যর্থ হয়েছে: ${data.error}`);
       }
@@ -135,7 +127,7 @@ export default function AdminDashboard() {
 
   const handleUploadProduct = async () => {
     if (!newProduct.productName || !newProduct.offerPrice) {
-      alert("দয়া করে প্রোডাক্টের নাম এবং অফার প্রাইস (বিক্রয় মূল্য) লিখুন!");
+      alert("দয়া করে প্রোডাক্টের নাম এবং অফার প্রাইস লিখুন!");
       return;
     }
     setIsUploading(true);
@@ -149,8 +141,8 @@ export default function AdminDashboard() {
           action: "add_product",
           productName: newProduct.productName,
           category: newProduct.category,
-          regularPrice: Number(newProduct.regularPrice) || Number(newProduct.offerPrice), // রেগুলার প্রাইস (কাটা মূল্য)
-          price: Number(newProduct.offerPrice),                                         // অফার প্রাইস (বিক্রয় মূল্য)
+          regularPrice: Number(newProduct.regularPrice) || Number(newProduct.offerPrice),
+          price: Number(newProduct.offerPrice),
           stock: Number(newProduct.stock) || 100,
           description: newProduct.description,
           imageUrl1: newProduct.imageUrl1 || 'parl.jpg',
@@ -163,7 +155,7 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (data.success || data.status === "success") {
-        alert("✅ প্রোডাক্ট সফলভাবে আপলোড এবং গুগল শিটে ডুয়েল প্রাইসসহ সেভ হয়েছে!");
+        alert("✅ প্রোডাক্ট সফলভাবে আপলোড এবং গুগল শিটে সেভ হয়েছে!");
         setNewProduct({
           productName: '',
           category: 'ব্রেসলেট (Bracelet)',
@@ -175,7 +167,7 @@ export default function AdminDashboard() {
           imageUrl2: 'parl1.jpg',
           imageUrl3: 'parl2.jpg',
           imageUrl4: 'parl3.jpg',
-          videoUrl: '',
+          videoUrl: '/video.mp4',
           specs: [
             { label: 'Product Type', value: '' },
             { label: 'Design', value: '' },
@@ -196,20 +188,20 @@ export default function AdminDashboard() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-500 font-bold text-lg animate-pulse">লোড হচ্ছে...</div>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-rose-500 font-bold text-lg animate-pulse">লোড হচ্ছে...</div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-black text-gray-800">Duo Corner Admin Panel</h1>
-          <p className="text-sm text-gray-500 mt-1">অ্যাডমিন ড্যাশবোর্ডে প্রবেশ করতে আপনার আইডি ও পাসওয়ার্ড দিয়ে সাইন ইন করুন</p>
+          <h1 className="text-2xl font-black text-white">Duo Corner Admin Panel</h1>
+          <p className="text-xs text-slate-400 mt-1">অ্যাডমিন ড্যাশবোর্ডে প্রবেশ করতে আপনার আইডি দিয়ে সাইন ইন করুন</p>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-slate-900 p-4 rounded-3xl shadow-xl border border-slate-800">
           <SignIn routing="hash" />
         </div>
       </div>
@@ -221,9 +213,9 @@ export default function AdminDashboard() {
 
   if (userEmail !== adminEmail) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-rose-50 p-6 text-center">
-        <h1 className="text-3xl font-bold text-red-600 mb-2">দুঃখিত! 🚫</h1>
-        <p className="text-gray-700 mb-4">এই পেজটি শুধুমাত্র Duo Corner-এর অ্যাডমিনের জন্য।</p>
+      <div className="flex h-screen flex-col items-center justify-center bg-slate-950 p-6 text-center text-white">
+        <h1 className="text-3xl font-bold text-rose-500 mb-2">দুঃখিত! 🚫</h1>
+        <p className="text-slate-400 mb-4">এই পেজটি শুধুমাত্র Duo Corner-এর অ্যাডমিনের জন্য সুরক্ষিত।</p>
         <button 
           onClick={() => signOut()}
           className="bg-rose-600 text-white font-bold px-6 py-2.5 rounded-xl shadow hover:bg-rose-700 transition cursor-pointer"
@@ -234,18 +226,18 @@ export default function AdminDashboard() {
     );
   }
 
-  const totalSales = orders.reduce((acc, curr) => acc + (Number(curr.totalPrice) || Number(curr.amount) || Number(curr.Amount) || 0), 0);
+  const totalSales = orders.reduce((acc, curr) => acc + (Number(curr.Amount || curr.amount || curr.totalPrice) || 0), 0);
   const totalOrders = orders.length;
   const mealFundTotal = totalOrders * 10;
 
   const filteredOrders = orders.filter(order => 
-    (order.name || order.Name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (order.phone || order.Phone || '').includes(searchTerm) ||
-    (order.district || '').toLowerCase().includes(searchTerm.toLowerCase())
+    (order.Name || order.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.Phone || order.phone || '').includes(searchTerm) ||
+    (order.Address || order.address || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col md:flex-row">
       
       {/* ১. সাইডবার নেভিগেশন */}
       <aside className="w-full md:w-64 bg-slate-900 border-r border-slate-800 p-5 flex flex-col justify-between">
@@ -310,13 +302,13 @@ export default function AdminDashboard() {
       </aside>
 
       {/* ২. মূল কন্টেন্ট এরিয়া */}
-      <section className="flex-1 p-6 md:p-8 overflow-y-auto">
+      <main className="flex-1 p-6 md:p-8 overflow-y-auto">
         
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-8 gap-4">
           <div className="w-full sm:w-80">
             <input 
               type="text" 
-              placeholder="🔍 গ্রাহকের নাম, ফোন বা জেলা দিয়ে খুঁজুন..." 
+              placeholder="🔍 গ্রাহকের নাম, ফোন বা ঠিকানা দিয়ে খুঁজুন..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
@@ -335,7 +327,6 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -360,131 +351,82 @@ export default function AdminDashboard() {
                 <span className="text-[10px] text-slate-400 mt-2 inline-block font-bold">সুরক্ষিত এনভায়রনমেন্ট</span>
               </div>
             </div>
+          </div>
+        )}
 
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-              <h3 className="text-sm font-black text-white mb-4 uppercase tracking-wider">সাম্প্রতিক অর্ডারসমূহ</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-800 text-slate-400">
-                      <th className="pb-3">গ্রাহক</th>
-                      <th className="pb-3">পণ্য</th>
-                      <th className="pb-3">থানা ও জেলা</th>
-                      <th className="pb-3">টাকা</th>
-                      <th className="pb-3">স্ট্যাটাস</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {filteredOrders.slice(0, 5).map((ord, i) => (
-                      <tr key={i} className="hover:bg-slate-800/40">
-                        <td className="py-3 font-bold text-white">{ord.name || ord.Name}<br/><span className="text-rose-400 text-[11px]">{ord.phone || ord.Phone}</span></td>
-                        <td className="py-3 text-slate-300">{ord.productName || ord.note || 'Couple Gift Box'}</td>
-                        <td className="py-3 text-slate-400 text-[11px]">{ord.thana}, {ord.district}</td>
-                        <td className="py-3 font-black text-white">৳{ord.totalPrice || ord.amount || ord.Amount}</td>
-                        <td className="py-3">
-                          <span className="bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full text-[10px] font-bold">
-                            {ord.status || ord.Status || 'Pending'}
+        {activeTab === 'orders' && (
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <h3 className="text-sm font-black text-white mb-4 uppercase tracking-wider">সকল অর্ডার প্রসেসিং তালিকা ({filteredOrders.length})</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400">
+                    <th className="p-3">অর্ডার আইডি</th>
+                    <th className="p-3">ক্রেতা ও মোবাইল</th>
+                    <th className="p-3">পণ্য ও ঠিকানা</th>
+                    <th className="p-3">স্ট্যাটাস</th>
+                    <th className="p-3">মূল্য</th>
+                    <th className="p-3 text-right">কুরিয়ার অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {filteredOrders.map((order, idx) => {
+                    const currentId = `ORD-${idx + 1}`;
+                    const custName = order.Name || order.name || 'অজানা ক্রেতা';
+                    const custPhone = order.Phone || order.phone || 'নম্বর নেই';
+                    const custAddress = order.Address || order.address || 'ঠিকানা নেই';
+                    const prodNote = order['Product/Note'] || order.productName || order.note || 'প্রোডাক্ট বিবরণ নেই';
+                    const amountVal = order.Amount || order.amount || order.totalPrice || 0;
+                    const statusVal = order.Status || order.status || 'Pending';
+
+                    return (
+                      <tr key={idx} className="hover:bg-slate-800/50">
+                        <td className="p-3 font-bold text-rose-400">{currentId}</td>
+                        <td className="p-3">
+                          <p className="font-bold text-white text-sm">{custName}</p>
+                          <p className="text-rose-400 font-semibold">{custPhone}</p>
+                        </td>
+                        <td className="p-3 text-slate-300 text-[11px]">
+                          <p className="font-semibold text-white">{prodNote}</p>
+                          <p className="text-slate-400">{custAddress}</p>
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${statusVal === 'Sent' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'}`}>
+                            {statusVal}
                           </span>
                         </td>
+                        <td className="p-3 font-black text-white">৳{amountVal}</td>
+                        <td className="p-3 text-right">
+                          <button
+                            onClick={() => sendToSteadfast(order, idx)}
+                            disabled={actionLoading === currentId}
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs cursor-pointer shadow-sm hover:opacity-90 transition"
+                          >
+                            {actionLoading === currentId ? 'পাঠানো হচ্ছে...' : '🚚 Steadfast'}
+                          </button>
+                        </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* Orders Tab */}
-        {activeTab === 'orders' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">সকল অর্ডার প্রসেসিং তালিকা ({filteredOrders.length})</h3>
-              <button onClick={refreshOrders} className="bg-slate-800 hover:bg-slate-700 text-rose-400 font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer border border-slate-700">
-                🔄 রিফ্রেশ করুন
-              </button>
-            </div>
-            {loading ? (
-              <div className="text-center py-16 text-slate-400 text-xs">অর্ডার লোড হচ্ছে...</div>
-            ) : filteredOrders.length === 0 ? (
-              <div className="text-center py-16 text-slate-400 text-xs">কোনো অর্ডার পাওয়া যায়নি।</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800 font-extrabold">
-                      <th className="p-4">অর্ডার আইডি</th>
-                      <th className="p-4">কাস্টমার তথ্য</th>
-                      <th className="p-4">প্রোডাক্ট ও ঠিকানা</th>
-                      <th className="p-4">স্ট্যাটাস</th>
-                      <th className="p-4 text-center">কুরিয়ার অ্যাকশন</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800 text-sm">
-                    {filteredOrders.map((order, index) => {
-                      const currentId = order.id || `ORD-${index + 1}`;
-                      const currentStatus = order.status || order.Status || "Pending";
-                      return (
-                        <tr key={index} className="hover:bg-slate-800/40">
-                          <td className="p-4 font-bold text-rose-400">{currentId}</td>
-                          <td className="p-4">
-                            <span className="font-bold block text-white">{order.name || order.Name}</span>
-                            <span className="text-rose-400 text-xs">{order.phone || order.Phone}</span>
-                          </td>
-                          <td className="p-4 text-xs">
-                            <span className="font-semibold block text-slate-200">{order.productName || order.note || order['Product/Note']}</span>
-                            <span className="text-slate-400 block">{order.address || order.Address}, {order.thana}, {order.district}</span>
-                            <span className="font-black text-white mt-1 block">৳{order.totalPrice || order.amount || order.Amount}</span>
-                          </td>
-                          <td className="p-4">
-                            <select 
-                              value={currentStatus}
-                              onChange={(e) => handleStatusChange(currentId, e.target.value)}
-                              className="text-xs font-bold px-3 py-2 rounded-xl border border-slate-700 bg-slate-950 text-white focus:outline-none cursor-pointer"
-                            >
-                              <option value="Pending">⏳ Pending</option>
-                              <option value="Processing">⚙️ Processing</option>
-                              <option value="Shipped">📦 Shipped</option>
-                              <option value="Completed">✅ Completed</option>
-                            </select>
-                          </td>
-                          <td className="p-4 text-center">
-                            <button
-                              onClick={() => sendToSteadfast(order, index)}
-                              disabled={actionLoading === currentId}
-                              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white font-bold px-4 py-2 rounded-xl shadow text-xs disabled:opacity-50 cursor-pointer"
-                            >
-                              {actionLoading === currentId ? 'পাঠানো হচ্ছে...' : '🚚 Steadfast'}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Inventory Tab */}
         {activeTab === 'inventory' && (
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
             <h3 className="text-sm font-black text-white uppercase tracking-wider">🏷️ Products & Inventory Management</h3>
-            <p className="text-xs text-slate-400">আপনার ই-কমার্স ক্যাটালগের স্টক এবং ভ্যারিয়েন্ট ম্যানেজমেন্ট:</p>
-            <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 text-center">
-              <p className="text-xs text-slate-400 mb-3">নতুন পণ্য যোগ করতে উপরের মেনু থেকে <b>Upload New Product</b> এ যান।</p>
-              <button onClick={() => setActiveTab('upload')} className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow cursor-pointer">
-                + নতুন প্রোডাক্ট আপলোড করুন
-              </button>
-            </div>
+            <button onClick={() => setActiveTab('upload')} className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow cursor-pointer">
+              + নতুন প্রোডাক্ট আপলোড করুন
+            </button>
           </div>
         )}
 
-        {/* Upload New Product Tab (Regular/Offer Price, Video, 4 Separate Images & 6 Specs) */}
         {activeTab === 'upload' && (
           <div className="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-3xl shadow-xl space-y-6">
             <h2 className="text-xl font-black text-white mb-2">নতুন প্রোডাক্ট আপলোড করুন</h2>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-2">প্রোডাক্টের নাম *</label>
@@ -519,36 +461,34 @@ export default function AdminDashboard() {
                 <textarea rows={3} value={newProduct.description} onChange={(e) => setNewProduct({...newProduct, description: e.target.value})} placeholder="প্রোডাক্টের সুন্দর বিবরণ..." className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500"></textarea>
               </div>
 
-              {/* আলাদা ৪টি ছবির ইনপুট ঘর (আপনার এক্সেল কলাম F, G, H, I এর সাথে সামঞ্জস্যপূর্ণ) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:col-span-2 bg-slate-950 p-4 rounded-2xl border border-slate-800">
                 <h3 className="text-xs font-black text-white sm:col-span-2 mb-1">🖼️ আলাদা ছবির ফাইলের নাম (Image URL 1 to 4)</h3>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 mb-1">Image URL 1</label>
-                  <input type="text" value={newProduct.imageUrl1} onChange={(e) => setNewProduct({...newProduct, imageUrl1: e.target.value})} placeholder="parl.jpg" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500" />
+                  <input type="text" value={newProduct.imageUrl1} onChange={(e) => setNewProduct({...newProduct, imageUrl1: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 mb-1">Image URL 2</label>
-                  <input type="text" value={newProduct.imageUrl2} onChange={(e) => setNewProduct({...newProduct, imageUrl2: e.target.value})} placeholder="parl1.jpg" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500" />
+                  <input type="text" value={newProduct.imageUrl2} onChange={(e) => setNewProduct({...newProduct, imageUrl2: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 mb-1">Image URL 3</label>
-                  <input type="text" value={newProduct.imageUrl3} onChange={(e) => setNewProduct({...newProduct, imageUrl3: e.target.value})} placeholder="parl2.jpg" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500" />
+                  <input type="text" value={newProduct.imageUrl3} onChange={(e) => setNewProduct({...newProduct, imageUrl3: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 mb-1">Image URL 4</label>
-                  <input type="text" value={newProduct.imageUrl4} onChange={(e) => setNewProduct({...newProduct, imageUrl4: e.target.value})} placeholder="parl3.jpg" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500" />
+                  <input type="text" value={newProduct.imageUrl4} onChange={(e) => setNewProduct({...newProduct, imageUrl4: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white" />
                 </div>
               </div>
             </div>
 
-            {/* প্রোডাক্ট স্পেসিফিকেশন অ্যাড করার ৬টি স্মার্ট ঘর */}
             <div className="pt-4 border-t border-slate-800">
               <h3 className="text-sm font-black text-white mb-3">🏷️ প্রোডাক্ট স্পেসিফিকেশন (সর্বোচ্চ ৬টি ঘর)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {newProduct.specs.map((spec, idx) => (
                   <div key={idx} className="flex gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <input type="text" value={spec.label} onChange={(e) => handleSpecChange(idx, 'label', e.target.value)} placeholder={`Label ${idx + 1} (যেমন: Material)`} className="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none" />
-                    <input type="text" value={spec.value} onChange={(e) => handleSpecChange(idx, 'value', e.target.value)} placeholder={`Value ${idx + 1} (যেমন: Stainless Steel)`} className="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none" />
+                    <input type="text" value={spec.label} onChange={(e) => handleSpecChange(idx, 'label', e.target.value)} placeholder={`Label ${idx + 1}`} className="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none" />
+                    <input type="text" value={spec.value} onChange={(e) => handleSpecChange(idx, 'value', e.target.value)} placeholder={`Value ${idx + 1}`} className="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none" />
                   </div>
                 ))}
               </div>
@@ -560,56 +500,25 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Categories Tab */}
         {activeTab === 'categories' && (
-          <div className="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-3xl shadow-xl text-center py-20">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl text-center py-20">
             <h2 className="text-2xl font-black text-white mb-2">ক্যাটাগরি ম্যানেজমেন্ট</h2>
-            <p className="text-slate-400 text-xs">খুব শিগগিরই আমরা এখানে ক্যাটাগরি যোগ করার অপশন চালু করব!</p>
           </div>
         )}
 
-        {/* Finance Tab */}
         {activeTab === 'finance' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <h3 className="text-sm font-black text-white uppercase tracking-wider">💰 Accounts & Profit/Loss Finance</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <p className="text-xs text-slate-400">মোট ক্যাশ কালেকশন (COD)</p>
-                <h4 className="text-lg font-black text-white mt-1">৳{totalSales}</h4>
-              </div>
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <p className="text-xs text-slate-400">আনুমানিক ডেলিভারি খরচ</p>
-                <h4 className="text-lg font-black text-rose-400 mt-1">৳{totalOrders * 100}</h4>
-              </div>
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <p className="text-xs text-slate-400">নিট বিক্রয় হিসাব</p>
-                <h4 className="text-lg font-black text-emerald-400 mt-1">৳{totalSales - (totalOrders * 100)}</h4>
-              </div>
-            </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <h3 className="text-sm font-black text-white uppercase tracking-wider">💰 Accounts & Finance</h3>
           </div>
         )}
 
-        {/* Social Impact & Meal Fund Tab */}
         {activeTab === 'impact' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <h3 className="text-base font-black text-amber-400">🥀 Duo Corner Social Impact & Meal Fund</h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              আপনার ব্যবসার মহৎ উদ্যোগের রিয়েল-টাইম হিসাব: প্রতিটি সফল অর্ডার থেকে সংগৃহীত লভ্যাংশের অংশ সরাসরি দুঃস্থদের খাবারের ফান্ডে জমা হচ্ছে।
-            </p>
-            <div className="bg-slate-950 border border-slate-800 p-5 rounded-2xl flex justify-between items-center">
-              <div>
-                <p className="text-xs text-slate-400">মোট জমানো মিল ফান্ড</p>
-                <h4 className="text-2xl font-black text-white mt-1">৳{mealFundTotal}</h4>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-400">অংশগ্রহণকারী মোট অর্ডার</p>
-                <h4 className="text-2xl font-black text-emerald-400 mt-1">{totalOrders} টি</h4>
-              </div>
-            </div>
           </div>
         )}
 
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }
