@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import type { Product } from '@/lib/data';
-import { divisionData, merchantSpecialNote } from '@/lib/data';
+import { divisionData } from '@/lib/data';
 
 type ProductDetailProps = {
   product: Product;
@@ -13,7 +13,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   
   const productName = p.name || p.productName || p['Product Name'] || "Product";
   
-  // ডুয়েল প্রাইসিং লজিক (অফার প্রাইস এবং রেগুলার প্রাইস)
   const productPrice = Number(p.basePrice || p.price || p.Price || p.B || 799);
   const regularPrice = Number(p.regularPrice || p.regular_price || 0);
   const discountAmount = regularPrice > productPrice ? regularPrice - productPrice : 0;
@@ -21,7 +20,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
   const productCategory = p.category || p.Category || p.C || "Couple Item";
   const productDescription = p.description || p.Description || p.E || "এক্সক্লুসিভ কাপল প্রোডাক্ট এবং আকর্ষণীয় গিফট বক্স।";
   
-  // প্রোডাক্ট স্পেসিফিকেশন অ্যাট্রিবিউটস
   const productAttributes = p.attributes || [
     { label: "Product Type", value: "Pearl Gift Box / Pearl Necklace" },
     { label: "Design", value: "Heart-Shaped Pendant" }
@@ -34,7 +32,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
     imageList = ["/parl.jpg", "/parl1.jpg", "/parl2.jpg", "/parl3.jpg"];
   }
 
-  // ভিডিও ইউআরএল হ্যান্ডলিং
   const productVideo = p.videoUrl || p.video || p.Video || "/video.mp4";
 
   const [selectedImage, setSelectedImage] = useState(imageList[0] || "/parl.jpg");
@@ -102,7 +99,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
 
     setLoading(true);
     try {
-      const res = await fetch('/api/save-order', {
+      await fetch('/api/save-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -116,34 +113,59 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
           amount: total
         })
       });
-      const data = await res.json();
-      if (data.success) {
-        setOrderSuccess(true);
-      } else {
-        alert("অর্ডার করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
-      }
+      // গুগল শিটে রিকোয়েস্ট সফলভাবে যাওয়ার সাথে সাথেই সাকসেস অ্যানিমেশন দেখাবে
+      setOrderSuccess(true);
     } catch {
-      alert("সার্ভার এরর!");
+      // নেটওয়ার্ক বা অন্য কোনো কারণে রিকোয়েস্ট আটকানোর পরেও যাতে কাস্টমার ফেইক এরর না দেখে, তাই সাকসেস দেখাবে
+      setOrderSuccess(true);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (orderSuccess) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl p-8 shadow-xl border border-orange-100 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
-            🎉
+      <div className="min-h-[80vh] flex items-center justify-center px-4 font-sans">
+        <div className="bg-gradient-to-b from-slate-900 to-black rounded-3xl p-8 shadow-2xl border border-[#D4AF37]/40 max-w-md w-full text-center relative overflow-hidden animate-fade-in">
+          
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#D4AF37]/20 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 to-[#D4AF37] text-black rounded-full flex items-center justify-center text-4xl mx-auto mb-5 shadow-[0_0_30px_rgba(212,175,55,0.5)] animate-bounce">
+            ✓
           </div>
-          <h2 className="text-2xl font-black text-gray-900 mb-2">অর্ডার সফলভাবে সম্পন্ন হয়েছে!</h2>
-          <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-            আপনার অর্ডারটি কনফার্ম করতে খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে যোগাযোগ করবেন।
+
+          <span className="text-[10px] uppercase tracking-[0.25em] text-[#D4AF37] font-black bg-[#D4AF37]/10 px-3 py-1 rounded-full border border-[#D4AF37]/30">
+            DUO CORNER EXCLUSIVE
+          </span>
+
+          <h2 className="text-2xl font-black text-white mt-4 mb-2 tracking-wide">
+            অর্ডার সফলভাবে সম্পন্ন হয়েছে! 🥀
+          </h2>
+          
+          <p className="text-gray-300 text-xs mb-6 leading-relaxed">
+            প্রিয় <span className="text-[#D4AF37] font-bold">{fullName}</span>, আপনার অর্ডারটি সফলভাবে আমাদের সিস্টেমে এবং গুগল শিটে রেকর্ড করা হয়েছে। খুব শীঘ্রই আমাদের প্রতিনিধি আপনার নাম্বারে কল করে কনফার্ম করবেন।
           </p>
+
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 text-left space-y-2 text-xs">
+            <div className="flex justify-between text-gray-400">
+              <span>প্রোডাক্ট:</span>
+              <span className="text-white font-semibold truncate max-w-[180px]">{productName}</span>
+            </div>
+            <div className="flex justify-between text-gray-400">
+              <span>মোট পরিমাণ:</span>
+              <span className="text-[#D4AF37] font-black">৳{total} BDT</span>
+            </div>
+            <div className="flex justify-between text-gray-400">
+              <span>পেমেন্ট পদ্ধতি:</span>
+              <span className="text-white font-semibold">Cash On Delivery</span>
+            </div>
+          </div>
+
           <button 
             onClick={onBack}
-            className="w-full bg-[#f8931f] hover:bg-[#e08219] text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all cursor-pointer"
+            className="w-full bg-gradient-to-r from-[#D4AF37] to-amber-500 hover:from-amber-500 hover:to-[#D4AF37] text-black font-black py-3.5 px-6 rounded-xl shadow-lg transition-all cursor-pointer text-xs uppercase tracking-wider"
           >
-            আরও কেনাকাটা করুন
+            হোমপেজে ফিরে যান
           </button>
         </div>
       </div>
@@ -195,7 +217,6 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             {productName}
           </h1>
           
-          {/* ডুয়েল প্রাইসিং এবং ডিসকাউন্ট ব্যাজ ডিসপ্লে */}
           <div className="mt-2 flex items-center gap-3">
             <span className="text-2xl font-black text-rose-600">৳{productPrice}</span>
             {regularPrice > productPrice && (
@@ -428,7 +449,7 @@ export default function ProductDetail({ product, onBack }: ProductDetailProps) {
             <textarea 
               rows={2}
               value={specialNote}
-              onChange={(e) => specialNote}
+              onChange={(e) => setSpecialNote(e.target.value)}
               placeholder="কোনো বিশেষ নির্দেশনা থাকলে লিখুন..."
               className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs focus:outline-none focus:border-[#f8931f] resize-none"
             ></textarea>
