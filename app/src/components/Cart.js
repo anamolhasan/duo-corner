@@ -44,7 +44,7 @@ function Cart() {
           <ul>
             {cartItems.map((item, index) => (
               <li key={index} style={{ fontSize: '18px', marginBottom: '10px' }}>
-                {item.name} - ৳{item.price}
+                {item.name} - {item.price}
               </li>
             ))}
           </ul>

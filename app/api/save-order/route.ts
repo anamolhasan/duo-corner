@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyRhXgy18iGITj89GjcnblmsTWBejfYbNgPEEquYwZtxqyWolXceVQFl-BM8iWmeTg/exec';
 
-// ১. গুগল শিট থেকে রিয়েল-টাইম অর্ডার ফেচ করার GET রাউট (অ্যাডমিন প্যানেলের জন্য)
+// ১. GET: গুগল শিট থেকে রিয়েল-টাইম অর্ডার ফেচ করার GET রাউট
 export async function GET() {
   try {
     const response = await fetch(GOOGLE_SHEET_URL, { cache: 'no-store' });
@@ -17,16 +17,14 @@ export async function GET() {
   }
 }
 
-// ২. কাস্টমার অর্ডার সেভ করার POST রাউট
+// ২. POST: কাস্টমার অর্ডার সেভ করার POST রাউট
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     
     const response = await fetch(GOOGLE_SHEET_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
       cache: 'no-store',
     });
@@ -43,7 +41,7 @@ export async function POST(request: Request) {
   }
 }
 
-// ৩. Steadfast কুরিয়ারে অর্ডার পাঠানোর PUT প্রক্সি রাউট
+// ৩. PUT: Steadfast কুরিয়ারে অর্ডার পাঠানো এবং গুগল শিটে স্ট্যাটাস আপডেট করা
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
@@ -56,7 +54,7 @@ export async function PUT(request: Request) {
       "recipient_name": body.name,
       "recipient_phone": body.phone,
       "recipient_address": body.address,
-      "amount_to_collect": Number(body.totalPrice) || 0
+      "cod_amount": Number(body.totalPrice || 0)
     };
 
     const steadfastRes = await fetch("https://portal.packzy.com/api/v1/create_order", {
@@ -71,10 +69,28 @@ export async function PUT(request: Request) {
 
     const result = await steadfastRes.json();
 
-    if (steadfastRes.ok && (result.status === 200 || result.success === true)) {
+    if (steadfastRes.ok && (result.status === 200 || result.status === 201 || result.success === true)) {
+      const consignmentIdNumber = result.consignment?.consignment_id || result.consignment_id || "OK";
+      
+      // কুরিয়ারে এন্ট্রি সফল হওয়ার পর গুগল শিটে স্ট্যাটাস 'Booked' এবং ট্র্যাকিং কোড সিঙ্ক করা
+      try {
+        await fetch(GOOGLE_SHEET_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_order_status',
+            phone: body.phone,
+            status: 'Booked',
+            trackingCode: consignmentIdNumber
+          })
+        });
+      } catch (sheetErr) {
+        console.error("Google sheet status update error:", sheetErr);
+      }
+
       return NextResponse.json({
         success: true,
-        consignmentId: result.consignment?.tracking_code || result.tracking_code || "OK"
+        consignmentId: consignmentIdNumber
       });
     } else {
       return NextResponse.json({

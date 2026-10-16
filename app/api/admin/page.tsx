@@ -5,6 +5,8 @@ import { useUser, useClerk, SignIn } from '@clerk/nextjs';
 type Order = {
   id?: string | number;
   Timestamp?: string;
+  Date?: string;
+  date?: string;
   name?: string;
   Name?: string;
   phone?: string;
@@ -36,7 +38,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'inventory' | 'finance' | 'impact' | 'upload' | 'categories'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // নতুন প্রোডাক্ট স্টেট (আপনার গুগল শিটের কলাম অনুযায়ী আলাদা ৪টি ছবি, ডুয়েল প্রাইস, ভিডিও ও ৬টি স্পেসিফিকেশন)
+  // নতুন প্রোডাক্ট স্টেট
   const [newProduct, setNewProduct] = useState({
     productName: '',
     category: 'ব্রেসলেট (Bracelet)',
@@ -86,15 +88,6 @@ export default function AdminDashboard() {
     return () => { active = false; };
   }, []);
 
-  const handleStatusChange = async (orderId: string | number, newStatus: string) => {
-    alert(`অর্ডার ${orderId} এর স্ট্যাটাস "${newStatus}" করা হয়েছে!`);
-    setOrders(orders.map(order => 
-      (order.id === orderId || `ORD-${orders.indexOf(order) + 1}` === orderId) 
-        ? { ...order, status: newStatus, Status: newStatus } 
-        : order
-    ));
-  };
-
   const sendToSteadfast = async (order: Order, index: number) => {
     if (!confirm('আপনি কি নিশ্চিতভাবে এই অর্ডারটি Steadfast কুরিয়ারে পাঠাতে চান?')) return;
     const orderId = order.id || `ORD-${index + 1}`;
@@ -117,6 +110,18 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.success) {
         alert(`✅ সফল! কনসাইনমেন্ট আইডি: ${data.consignmentId}`);
+        
+        // স্টেটফাস্টে এন্ট্রি সফল হওয়ার পর লোকাল স্টেট আপডেট করে স্ট্যাটাস 'Booked' করা
+        setOrders(prevOrders => {
+          const updated = [...prevOrders];
+          updated[index] = {
+            ...updated[index],
+            status: 'Booked',
+            Status: 'Booked'
+          };
+          return updated;
+        });
+
       } else {
         alert(`❌ ব্যর্থ হয়েছে: ${data.error}`);
       }
@@ -369,35 +374,51 @@ export default function AdminDashboard() {
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-400">
-                    <th className="p-3">অর্ডার আইডি</th>
-                    <th className="p-3">ক্রেতা ও মোবাইল</th>
-                    <th className="p-3">পণ্য ও ঠিকানা</th>
-                    <th className="p-3">মূল্য</th>
-                    <th className="p-3 text-right">কুরিয়ার অ্যাকশন</th>
+                    <th className="p-3">Order ID</th>
+                    <th className="p-3">Date</th>
+                    <th className="p-3">Name</th>
+                    <th className="p-3">Number</th>
+                    <th className="p-3">Collection Amount</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-center">Courier Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {filteredOrders.map((order, idx) => {
                     const currentId = order.id || `ORD-${idx + 1}`;
+                    let cName = order.name || order.Name || 'Unknown Customer';
+                    let cPhone = order.phone || order.Phone || 'No Number';
+                    let cAmount = order.totalPrice || order.amount || order.Amount || 0;
+                    let cStatus = order.status || order.Status || 'Pending';
+                    let cDate = order.Timestamp || order.Date || order.date || 'N/A';
+                    
+                    const isBooked = cStatus.toLowerCase() === 'booked';
+
                     return (
                       <tr key={idx} className="hover:bg-slate-800/50">
                         <td className="p-3 font-bold text-rose-400">{currentId}</td>
+                        <td className="p-3 text-slate-400 text-[11px]">{cDate}</td>
+                        <td className="p-3 font-bold text-white">{cName}</td>
+                        <td className="p-3 text-slate-300">{cPhone}</td>
+                        <td className="p-3 font-black text-white">{cAmount}</td>
                         <td className="p-3">
-                          <p className="font-bold text-white text-sm">{order.name || order.Name}</p>
-                          <p className="text-rose-400 font-semibold">{order.phone || order.Phone}</p>
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                            isBooked ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                          }`}>
+                            {cStatus}
+                          </span>
                         </td>
-                        <td className="p-3 text-slate-300 text-[11px]">
-                          <p className="font-semibold text-white">{order.productName || order.note}</p>
-                          {order.address || order.Address}, {order.thana}, {order.district}
-                        </td>
-                        <td className="p-3 font-black text-white">৳{order.totalPrice || order.amount || order.Amount}</td>
-                        <td className="p-3 text-right">
+                        <td className="p-3 text-center">
                           <button
                             onClick={() => sendToSteadfast(order, idx)}
-                            disabled={actionLoading === currentId}
-                            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs cursor-pointer shadow-sm"
+                            disabled={actionLoading === currentId || isBooked}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-sm ${
+                              isBooked 
+                                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 cursor-not-allowed' 
+                                : 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer'
+                            }`}
                           >
-                            {actionLoading === currentId ? 'পাঠানো হচ্ছে...' : '🚚 Steadfast'}
+                            {actionLoading === currentId ? 'Booking...' : (isBooked ? '✅ Booked' : '🚚 Steadfast')}
                           </button>
                         </td>
                       </tr>
@@ -418,7 +439,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Upload New Product Tab (আপনার এক্সেল কলামের সাথে ১০০% সামঞ্জস্যপূর্ণ) */}
+        {/* Upload New Product Tab */}
         {activeTab === 'upload' && (
           <div className="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-3xl shadow-xl space-y-6">
             <h2 className="text-xl font-black text-white mb-2">নতুন প্রোডাক্ট আপলোড করুন</h2>
@@ -479,7 +500,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* প্রোডাক্ট স্পেসিফিকেশন (সর্বোচ্চ ৬টি ঘর) */}
+            {/* প্রোডাক্ট স্পেসিফিকেশন */}
             <div className="pt-4 border-t border-slate-800">
               <h3 className="text-sm font-black text-white mb-3">🏷️ প্রোডাক্ট স্পেসিফিকেশন (সর্বোচ্চ ৬টি ঘর)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
