@@ -6,6 +6,8 @@ type Order = {
   Timestamp?: string;
   Date?: string;
   date?: string;
+  Time?: string;
+  time?: string;
   name?: string;
   Name?: string;
   customerName?: string;
@@ -111,7 +113,8 @@ export default function AdminDashboard() {
       const res = await fetch('/api/save-order');
       const data = await res.json();
       if (Array.isArray(data)) {
-        setOrders(data);
+        // নতুন অর্ডারগুলো উপরে দেখানোর জন্য রিভার্স করা হলো
+        setOrders(data.reverse());
       }
     } catch (error) {
       console.error('Data fetch error:', error);
@@ -139,8 +142,10 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  const handleCourierBooking = async (order: Order, index: number) => {
-    const orderId = `DC-${index + 1}`;
+  const handleCourierBooking = async (order: Order, index: number, totalCount: number) => {
+    // সঠিক সিরিয়ালভিত্তিক ট্র্যাকিং আইডি হিসাব (যেমন: মোট অর্ডার থেকে ইনডেক্স বাদ দিয়ে বা সিরিয়াল অনুযায়ী সংখ্যা)
+    const serialNum = totalCount - index;
+    const orderId = `DC-${serialNum}`;
     setBookingLoading(orderId);
 
     let rawPhone = String(order.phone || order.Phone || order.customerPhone || order.Number || order.number || '');
@@ -164,13 +169,14 @@ export default function AdminDashboard() {
           name: customerName,
           phone: formattedPhone,
           address: customerAddress,
-          totalPrice: cleanAmount
+          totalPrice: cleanAmount,
+          serialNumber: serialNum // শুধুমাত্র সংখ্যাভিত্তিক ট্র্যাকিং আইডির জন্য পাঠানো হলো
         })
       });
 
       const result = await res.json();
       if (result.success) {
-        alert(`সফল! কুরিয়ার ট্র্যাকিং আইডি (CN): ${result.consignmentId}`);
+        alert(`সফল! ট্র্যাকিং আইডি (সিরিয়াল সংখ্যা): ${result.consignmentId}`);
         
         setOrders(prevOrders => {
           const updated = [...prevOrders];
@@ -367,6 +373,7 @@ export default function AdminDashboard() {
                   <tr className="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider">
                     <th className="p-4 font-bold">Order ID</th>
                     <th className="p-4 font-bold">Date</th>
+                    <th className="p-4 font-bold">Time</th>
                     <th className="p-4 font-bold">Name</th>
                     <th className="p-4 font-bold">Number</th>
                     <th className="p-4 font-bold">Collection Amount</th>
@@ -378,10 +385,14 @@ export default function AdminDashboard() {
                 <tbody className="divide-y divide-slate-800 text-sm">
                   {filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-8 text-slate-500">No orders found!</td>
+                      <td colSpan={9} className="text-center py-8 text-slate-500">No orders found!</td>
                     </tr>
                   ) : (
                     filteredOrders.map((order, idx) => {
+                      // নতুন অর্ডারগুলো উপরে থাকার ফলে সঠিক সিরিয়াল আইডি নির্ধারণ (যেমন: ORD-20, ORD-19...)
+                      const totalCount = orders.length;
+                      const orderSeqNumber = totalCount - idx;
+
                       let rawPhone = String(order.phone || order.Phone || order.customerPhone || order.Number || order.number || '');
                       let formattedPhone = rawPhone.replace(/\D/g, '');
                       if (formattedPhone.length === 10 && !formattedPhone.startsWith('0')) {
@@ -393,15 +404,37 @@ export default function AdminDashboard() {
 
                       let cName = order.name || order.Name || order.customerName || 'Unknown Customer';
                       let cStatus = order.status || order.Status || 'Pending';
-                      let cDate = order.Timestamp || order.Date || order.date;
+                      let cTimestamp = order.Timestamp || order.Date || order.date || '';
+                      
+                      // ডেটা ও টাইম আলাদা করা
+                      let dateStr = 'N/A';
+                      let timeStr = 'N/A';
+                      if (cTimestamp) {
+                        const dt = new Date(cTimestamp);
+                        if (!isNaN(dt.getTime())) {
+                          dateStr = dt.toLocaleDateString();
+                          timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        } else if (cTimestamp.includes(' ')) {
+                          const parts = cTimestamp.split(' ');
+                          dateStr = parts[0];
+                          timeStr = parts[1] || 'N/A';
+                        } else {
+                          dateStr = cTimestamp;
+                        }
+                      }
+                      if (order.Time || order.time) {
+                        timeStr = order.Time || order.time || timeStr;
+                      }
+
                       let cTracking = order.trackingCode || order.TrackingCode || order['Tracking Code'] || '';
 
                       const isBooked = cStatus.toLowerCase() === 'booked' || cStatus.toLowerCase() === 'sent';
 
                       return (
                         <tr key={idx} className="hover:bg-slate-800/50 transition">
-                          <td className="p-4 font-bold text-rose-500">ORD-{idx + 1}</td>
-                          <td className="p-4 text-slate-400 text-xs">{cDate ? new Date(cDate).toLocaleDateString() : 'N/A'}</td>
+                          <td className="p-4 font-bold text-rose-500">ORD-{orderSeqNumber}</td>
+                          <td className="p-4 text-slate-400 text-xs">{dateStr}</td>
+                          <td className="p-4 text-slate-400 text-xs">{timeStr}</td>
                           <td className="p-4 font-bold text-white">{cName}</td>
                           <td className="p-4 text-slate-300">{formattedPhone || 'No Number'}</td>
                           <td className="p-4 text-white font-medium">{cleanAmount}</td>
@@ -417,15 +450,15 @@ export default function AdminDashboard() {
                           </td>
                           <td className="p-4 text-center">
                             <button 
-                              onClick={() => handleCourierBooking(order, idx)}
-                              disabled={bookingLoading === `DC-${idx + 1}` || isBooked}
+                              onClick={() => handleCourierBooking(order, idx, totalCount)}
+                              disabled={bookingLoading === `DC-${orderSeqNumber}` || isBooked}
                               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm ${
                                 isBooked 
                                   ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 cursor-not-allowed' 
                                   : 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer'
                               }`}
                             >
-                              {bookingLoading === `DC-${idx + 1}` ? 'Booking...' : (isBooked ? '✅ Booked' : '🚚 Steadfast')}
+                              {bookingLoading === `DC-${orderSeqNumber}` ? 'Booking...' : (isBooked ? '✅ Booked' : '🚚 Steadfast')}
                             </button>
                           </td>
                         </tr>
@@ -811,7 +844,7 @@ export default function AdminDashboard() {
                         let amt = Number(String(o.amount || o.Amount || o.productPrice || o.collectionAmount || o['Collection Amount'] || '0').replace(/[^\d]/g, '')) || 0;
                         return (
                           <tr key={idx} className="hover:bg-slate-800/50">
-                            <td className="p-3 font-bold text-rose-500">ORD-{idx + 1}</td>
+                            <td className="p-3 font-bold text-rose-500">ORD-{orders.length - idx}</td>
                             <td className="p-3 text-white">{o.name || o.Name || 'Customer'}</td>
                             <td className="p-3 text-emerald-400 font-bold">৳{amt}</td>
                             <td className="p-3"><span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-bold">{o.status || o.Status || 'Pending'}</span></td>
