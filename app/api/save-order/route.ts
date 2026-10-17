@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyRhXgy18iGITj89GjcnblmsTWBejfYbNgPEEquYwZtxqyWolXceVQFl-BM8iWmeTg/exec';
 
-// ১. GET: গুগল শিট থেকে রিয়েল-টাইম অর্ডার ফেচ করার GET রাউট
+// ১. GET: গুগল শিট থেকে রিয়েল-টাইম অর্ডার ফেচ করা
 export async function GET() {
   try {
     const response = await fetch(GOOGLE_SHEET_URL, { cache: 'no-store' });
@@ -17,7 +17,7 @@ export async function GET() {
   }
 }
 
-// ২. POST: কাস্টমার অর্ডার সেভ করার POST রাউট
+// ২. POST: ওয়েবসাইট থেকে কাস্টমার অর্ডার সরাসরি গুগল শিটে সেভ করার রাউট
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -25,7 +25,10 @@ export async function POST(request: Request) {
     const response = await fetch(GOOGLE_SHEET_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        action: 'add_order',
+        ...body
+      }),
       cache: 'no-store',
     });
 
@@ -41,7 +44,7 @@ export async function POST(request: Request) {
   }
 }
 
-// ৩. PUT: Steadfast কুরিয়ারে অর্ডার পাঠানো এবং গুগল শিটে স্ট্যাটাস আপডেট করা
+// ৩. PUT: Steadfast কুরিয়ারে অর্ডার পাঠানো এবং গুগল শিটে স্ট্যাটাস ও ট্র্যাকিং আইডি আপডেট করা
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
@@ -70,7 +73,7 @@ export async function PUT(request: Request) {
     const result = await steadfastRes.json();
 
     if (steadfastRes.ok && (result.status === 200 || result.status === 201 || result.success === true)) {
-      const consignmentIdNumber = result.consignment?.consignment_id || result.consignment_id || "OK";
+      const consignmentIdNumber = result.consignment?.tracking_code || result.consignment?.consignment_id || result.consignment_id || "OK";
       
       // কুরিয়ারে এন্ট্রি সফল হওয়ার পর গুগল শিটে স্ট্যাটাস 'Booked' এবং ট্র্যাকিং কোড সিঙ্ক করা
       try {
